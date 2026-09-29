@@ -1,0 +1,42 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config } from '../lib/config';
+---
+
+<Layout
+  title="About"
+  description="Makeatimer is a free collection of browser-based timers and time calculators, operated by FAXCORP."
+  path="/about/"
+>
+  <article class="prose">
+    <p class="eyebrow">About Makeatimer</p>
+    <h1>
+      A little less time
+      <br />
+      doing time maths.
+    </h1>
+    <p>
+      Makeatimer brings timers and practical time calculations together in one
+      place. Start a countdown, total a working week, compare dates, or check a
+      meeting time across cities.
+    </p>
+    <p>
+      The tools run in your browser. There are no accounts, subscriptions, or
+      calculation servers. Inputs can be shared through editable links.
+    </p>
+    <h2 id="open-source">Open source</h2>
+    <p>
+      The application is licensed under the MIT license, which lets you inspect,
+      modify, and reuse the code. The tools are free to use.
+    </p>
+    <h2>Operator</h2>
+    <p>
+      Makeatimer is operated by {config.operator}.{' '}
+      <a href="https://faxcorp.dev/company/">Company details</a>.
+    </p>
+    <p>
+      Questions or a calculation that looks wrong?{' '}
+      <a href="/contact/">Get in touch</a>.
+    </p>
+  </article>
+</Layout>

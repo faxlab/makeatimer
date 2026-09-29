@@ -1,0 +1,211 @@
+---
+import '../styles/global.css';
+import { config } from '../lib/config';
+const { title, description, path = '/', app = false } = Astro.props;
+const canonical = new URL(path, config.origin).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#285c45" />
+    <title>{title} | Makeatimer</title>
+    <meta name="description" content={description} />
+    <meta
+      name="robots"
+      content={config.launchReady ? 'index,follow' : 'noindex,nofollow'}
+    />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${title} | Makeatimer`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={`${config.origin}/social.png`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {app && (
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebApplication',
+          name: title,
+          description,
+          url: canonical,
+          applicationCategory: 'UtilitiesApplication',
+          operatingSystem: 'Any modern browser',
+          isAccessibleForFree: true,
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+        }).replaceAll('<', '\u003c')}
+      />
+    )}
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('makeatimer:theme');
+        if (t === 'light' || t === 'dark')
+          document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <header class="site-header">
+      <a href="/" class="brand" aria-label="Makeatimer homepage">
+        <img src="/favicon.svg" width="30" height="30" alt="" />
+        makeatimer<span class="brand-dot">.</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="/" aria-current={path === '/' ? 'page' : undefined}>
+          Timer
+        </a>
+        <a
+          href="/tools/"
+          aria-current={path === '/tools/' ? 'page' : undefined}
+        >
+          All tools <span class="count">24</span>
+        </a>
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          aria-label="Change color theme"
+          title="Color theme: system"
+        >
+          ◐
+        </button>
+      </nav>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div>
+        <a class="brand" href="/">
+          makeatimer<span class="brand-dot">.</span>
+        </a>
+        <p>Time, made a little simpler.</p>
+      </div>
+      <nav aria-label="Footer navigation">
+        <a href="/about/">About</a>
+        <a href="/contact/">Contact</a>
+        <a href="/conventions/">Calculation guide</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        {config.ads && (
+          <button id="consent-settings" class="quiet">
+            Ad preferences
+          </button>
+        )}
+      </nav>
+      <small>
+        © {new Date().getFullYear()} {config.operator}
+      </small>
+    </footer>
+    <script>
+      const button = document.querySelector<HTMLButtonElement>('#theme-toggle');
+      function showTheme() {
+        if (button) {
+          const theme = document.documentElement.dataset.theme || 'system';
+          button.title = `Color theme: ${theme}`;
+          button.setAttribute(
+            'aria-label',
+            `Color theme: ${theme}. Change theme`,
+          );
+        }
+      }
+      showTheme();
+      button?.addEventListener('click', () => {
+        const current = document.documentElement.dataset.theme || 'system';
+        const theme =
+          current === 'system'
+            ? 'light'
+            : current === 'light'
+              ? 'dark'
+              : 'system';
+        if (theme === 'system') delete document.documentElement.dataset.theme;
+        else document.documentElement.dataset.theme = theme;
+        try {
+          localStorage.setItem('makeatimer:theme', theme);
+        } catch {}
+        showTheme();
+      });
+    </script>
+    {config.ads && <script>
+      import { config } from '../lib/config';
+      import { adController } from '../lib/ads';
+      const units = document.querySelectorAll<HTMLElement>('.ad-slot');
+      const controller = adController(config.ads, {
+        loadScript: () => {
+          const script = document.createElement('script');
+          script.async = true;
+          script.crossOrigin = 'anonymous';
+          script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${config.client}`;
+          script.onerror = () => {};
+          document.head.append(script);
+        },
+        fill: (id) => {
+          document
+            .querySelector(`.ad-slot[data-slot="${id}"] ins`)
+            ?.classList.add('adsbygoogle');
+          const win = window as unknown as { adsbygoogle: object[] };
+          win.adsbygoogle ||= [];
+          try {
+            win.adsbygoogle.push({});
+          } catch {}
+        },
+        clear: () =>
+          units.forEach((u) => u.querySelector('ins')?.replaceChildren()),
+        reload: () => location.reload(),
+      });
+      const island = document.querySelector('astro-island');
+      let hydrated = !island || !island.hasAttribute('ssr');
+      const updateActivity = () => {
+        controller.timing(
+          !hydrated ||
+            document.body.classList.contains('timing-active') ||
+            document.body.classList.contains('tool-error'),
+        );
+      };
+      updateActivity();
+      const visible = new Set<string>();
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.slot!;
+          if (entry.isIntersecting) {
+            visible.add(id);
+            controller.visible(id);
+          } else visible.delete(id);
+        }
+      });
+      units.forEach((u) => observer.observe(u));
+      // Dispatch only from the installed certified CMP after its own persisted-state resolution.
+      window.addEventListener('makeatimer:ad-consent', (e) => {
+        controller.consent(
+          (e as CustomEvent<{ permitted: boolean }>).detail?.permitted === true,
+        );
+        visible.forEach((id) => controller.visible(id));
+      });
+      island?.addEventListener('astro:hydrate', () => {
+        hydrated = true;
+        updateActivity();
+        visible.forEach((id) => controller.visible(id));
+      });
+      const activity = new MutationObserver(() => {
+        updateActivity();
+        visible.forEach((id) => controller.visible(id));
+      });
+      activity.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+      document
+        .querySelector('#consent-settings')
+        ?.addEventListener('click', () =>
+          window.dispatchEvent(new Event('makeatimer:open-consent')),
+        );
+    </script>}
+  </body>
+</html>

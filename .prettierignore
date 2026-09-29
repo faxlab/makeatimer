@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+output/
+.playwright-cli/
+package-lock.json
+public/social.svg

@@ -1,0 +1,80 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config } from '../lib/config';
+---
+
+<Layout
+  title="Privacy"
+  description="How Makeatimer handles browser storage, share links, contact messages, and advertising."
+  path="/privacy/"
+>
+  <article class="prose">
+    <p class="eyebrow">Updated September 29, 2026</p>
+    <h1>Privacy</h1>
+    <p>
+      Makeatimer is operated by {config.operator}.{' '}
+      <a href="https://faxcorp.dev/company/">Company details</a>. For privacy
+      questions, email <a href={`mailto:${config.email}`}>{config.email}</a>.
+    </p>
+    <h2>Calculations and browser storage</h2>
+    <p>
+      Calculations run on your device. Makeatimer does not send your calculator
+      inputs to a calculation server and does not have user accounts. Theme,
+      sound preferences, and favourites are stored in your browser’s local
+      storage. Active timing state is stored in session storage for recovery
+      within the same tab. Clear site data in your browser to remove this
+      information.
+    </p>
+    <h2>Share links</h2>
+    <p>
+      Share links place your inputs in the URL fragment, after the # character.
+      The fragment is not part of the page’s HTTP request. Recipients and
+      scripts running on the page can read it, so do not use a shared link for
+      confidential information.
+    </p>
+    <h2>Page delivery</h2>
+    <p>
+      When hosted, the site’s infrastructure provider processes connection
+      information such as IP addresses and request details to deliver and
+      protect the website. Makeatimer does not maintain a separate database of
+      calculator inputs.
+    </p>
+    <h2>Contact messages</h2>
+    <p>
+      If you email us, we use the information you provide to respond and
+      investigate your request. Avoid sending sensitive information that is
+      unnecessary for resolving the issue.
+    </p>
+    <h2>Advertising</h2>
+    {config.ads ? (
+      <>
+        <p>
+          Google AdSense advertising is configured on this site. Advertising is
+          requested only when the installed consent manager permits it. Google
+          and its partners may process device information and use cookies or
+          similar storage according to your preferences. See{' '}
+          <a href="https://policies.google.com/technologies/partner-sites">
+            Google’s partner-site privacy information
+          </a>
+          .
+        </p>
+        <p>
+          Use Ad preferences in the footer to manage your choices. The tools
+          work when advertising permission is refused or scripts are blocked.
+        </p>
+      </>
+    ) : (
+      <p>
+        Advertising is disabled in this version. No advertising or analytics
+        scripts are loaded by Makeatimer.
+      </p>
+    )}
+    <h2>Your requests</h2>
+    <p>
+      Contact us for questions about information you have provided, including
+      access or deletion requests. You can also contact your local data
+      protection authority. We will update this page if the site’s data
+      practices change.
+    </p>
+  </article>
+</Layout>

@@ -1,0 +1,24 @@
+---
+import { config } from '../lib/config';
+const { placement } = Astro.props as {
+  placement: 'side' | 'result' | 'content';
+};
+---
+
+{config.ads && (
+  <aside
+    class={`ad-slot ad-${placement}`}
+    aria-label="Advertisement"
+    data-slot={config.slots[placement]}
+  >
+    <span>Advertisement</span>
+    <ins
+      class="manual-ad"
+      style="display:block"
+      data-ad-client={config.client}
+      data-ad-slot={config.slots[placement]}
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    ></ins>
+  </aside>
+)}

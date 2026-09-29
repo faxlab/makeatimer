@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Directory from '../components/Directory.svelte';
+---
+
+<Layout
+  title="All 24 time tools"
+  description="Find timers, work-hour calculators, date tools, time-zone converters, and specialist time estimates."
+  path="/tools/"
+>
+  <div class="tool-heading">
+    <p class="eyebrow">One place. Every kind of time.</p>
+    <h1>Find your time tool.</h1>
+    <p>From a five-minute break to a week of work. Pick what you need.</p>
+  </div>
+  <Directory client:load />
+</Layout>

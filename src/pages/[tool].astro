@@ -1,0 +1,89 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Calculator from '../components/Calculator.svelte';
+import Timer from '../components/Timer.svelte';
+import Timing from '../components/Timing.svelte';
+import AdSlot from '../components/AdSlot.astro';
+import { tools, getTool, toolPath } from '../lib/tools';
+export function getStaticPaths() {
+  return tools
+    .filter((t) => t.id !== 'timer')
+    .map((tool) => ({ params: { tool: tool.id }, props: { tool } }));
+}
+const { tool } = Astro.props;
+---
+
+<Layout
+  title={tool.name}
+  description={tool.description}
+  path={toolPath(tool.id)}
+  app
+>
+  <div class="tool-heading">
+    <a class="breadcrumb" href="/tools/">
+      ← All tools
+    </a>
+    <p class="eyebrow">{tool.category}</p>
+    <h1>{tool.name}</h1>
+    <p>{tool.description}</p>
+  </div>
+  <div class="tool-layout">
+    <div class="tool-main">
+      {tool.id === 'countdown' ? (
+        <Timer client:load event />
+      ) : tool.id === 'stopwatch' ? (
+        <Timing client:load />
+      ) : tool.id === 'interval-timer' ? (
+        <Timing client:load intervals />
+      ) : (
+        <Calculator client:load tool={tool} />
+      )}
+      <AdSlot placement="result" />
+    </div>
+    <AdSlot placement="side" />
+  </div>
+  <section class="tool-content">
+    <h2>How to use {tool.name.toLowerCase()}</h2>
+    <p>{tool.intro}</p>
+    <div class="worked-example">
+      <p class="eyebrow">Worked example</p>
+      <p>{tool.example}</p>
+    </div>
+    <h2>What the result means</h2>
+    <p>{tool.convention}</p>
+    <p>
+      Use Copy result to copy the displayed answer. Share link preserves the
+      inputs so someone else can open and edit the calculation. Opening a link
+      never starts a timer or asks for permissions.
+    </p>
+    <p>
+      <a href="/conventions/">Read the calculation conventions →</a>
+    </p>
+  </section>
+  <AdSlot placement="content" />
+  <section class="related">
+    <div class="section-heading">
+      <h2>Keep going</h2>
+      <a class="text-link" href="/tools/">
+        All tools ↗
+      </a>
+    </div>
+    <div class="tool-grid">
+      {tool.related.map((id) => {
+        const t = getTool(id);
+        return (
+          <article class="tool-tile">
+            <span class="eyebrow">{t.category}</span>
+            <h3>
+              <a href={toolPath(id)}>
+                {t.name}
+                <span aria-hidden="true">↗</span>
+              </a>
+            </h3>
+            <p>{t.description}</p>
+          </article>
+        );
+      })}
+    </div>
+  </section>
+</Layout>

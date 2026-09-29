@@ -1,0 +1,92 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Timer from '../components/Timer.svelte';
+import AdSlot from '../components/AdSlot.astro';
+import { getTool, toolPath } from '../lib/tools';
+const tool = getTool('timer');
+---
+
+<Layout
+  title="Online timer & time calculators"
+  description={tool.description}
+  path="/"
+  app
+>
+  <div class="home-hero">
+    <div class="hero-copy">
+      <p class="eyebrow">
+        <span class="live-dot"></span> A little time. Well spent.
+      </p>
+      <h1>
+        A timer for <br />
+        <em>right now.</em>
+      </h1>
+      <p class="hero-description">
+        Five minutes or a moment in another time zone. Set it, start it, get on
+        with your day.
+      </p>
+      <a class="text-link" href="/tools/">
+        Need to calculate time? Explore all 24 tools{' '}
+        <span aria-hidden="true">↗</span>
+      </a>
+      <div class="hero-note">
+        <span aria-hidden="true">◎</span> Free to use. No sign-up. Your
+        calculations stay in your browser.
+      </div>
+    </div>
+    <Timer client:load />
+  </div>
+  <AdSlot placement="result" />
+  <section class="popular">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Beyond the countdown</p>
+        <h2>A tool for every kind of time.</h2>
+      </div>
+      <a class="text-link" href="/tools/">
+        All tools <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+    <div class="tool-grid">
+      {[
+        'stopwatch',
+        'work-hours',
+        'time-zone',
+        'date-difference',
+        'interval-timer',
+        'time-calculator',
+      ].map((id) => {
+        const t = getTool(id);
+        return (
+          <article class="tool-tile">
+            <span class="eyebrow">{t.category}</span>
+            <h3>
+              <a href={toolPath(id)}>
+                {t.name}
+                <span aria-hidden="true">↗</span>
+              </a>
+            </h3>
+            <p>{t.description}</p>
+          </article>
+        );
+      })}
+    </div>
+  </section>
+  <section class="explanation">
+    <div>
+      <p class="eyebrow">How it works</p>
+      <h2>
+        Start with a duration.
+        <br />
+        Or an exact moment.
+      </h2>
+    </div>
+    <div>
+      <p>{tool.intro}</p>
+      <h3>Try it</h3>
+      <p>{tool.example}</p>
+      <p>{tool.convention}</p>
+    </div>
+  </section>
+  <AdSlot placement="content" />
+</Layout>

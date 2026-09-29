@@ -1,0 +1,43 @@
+{
+  "name": "makeatimer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "check": "astro check && svelte-check --tsconfig ./tsconfig.json",
+    "test": "tsx --test tests/*.test.ts",
+    "build": "astro build && node scripts/validate-build.mjs",
+    "preview": "astro preview --host 127.0.0.1",
+    "browser-check": "node scripts/browser-check.mjs",
+    "ad-check": "node scripts/ad-browser-check.mjs",
+    "performance-check": "node scripts/performance-check.mjs",
+    "format": "prettier --write .",
+    "verify": "npm run check && npm test && npm run build",
+    "release-check": "node scripts/release-check.mjs"
+  },
+  "dependencies": {
+    "@astrojs/svelte": "9.0.1",
+    "@js-temporal/polyfill": "0.5.1",
+    "astro": "7.3.5",
+    "decimal.js": "10.6.0",
+    "svelte": "5.57.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@axe-core/playwright": "4.13.0",
+    "@types/node": "26.6.3",
+    "lighthouse": "13.5.0",
+    "playwright": "1.63.0",
+    "prettier": "3.9.9",
+    "prettier-plugin-astro": "1.1.0",
+    "prettier-plugin-svelte": "4.1.1",
+    "sharp": "0.35.5",
+    "svelte-check": "4.7.6",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}

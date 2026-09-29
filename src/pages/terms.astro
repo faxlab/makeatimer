@@ -1,0 +1,45 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config } from '../lib/config';
+---
+
+<Layout
+  title="Terms"
+  description="Practical terms for using Makeatimer’s free browser timers and calculations."
+  path="/terms/"
+>
+  <article class="prose">
+    <p class="eyebrow">Updated September 29, 2026</p>
+    <h1>Terms of use</h1>
+    <p>
+      Makeatimer is a free browser tool operated by {config.operator}.
+      Questions: <a href={`mailto:${config.email}`}>{config.email}</a>.{' '}
+      <a href="https://faxcorp.dev/company/">Company details</a>.
+    </p>
+    <h2>Using the results</h2>
+    <p>
+      Check important results independently. Calculations depend on your inputs,
+      displayed rounding, browser support, and time-zone data. Work-hour tools
+      calculate time and do not determine legal payroll or overtime obligations.
+      Speech and render tools are estimates based on the assumptions shown.
+    </p>
+    <h2>Timer availability</h2>
+    <p>
+      Browser alarms require an available browser. Closing a tab, suspending a
+      device, changing the device clock, or restricting background activity can
+      delay or prevent an alarm. Use a suitable independent alarm for anything
+      requiring guaranteed timing.
+    </p>
+    <h2>Availability and changes</h2>
+    <p>
+      We may update the tools or interrupt availability for maintenance. The
+      service is provided as available. These terms do not limit rights that
+      applicable law makes mandatory.
+    </p>
+    <h2>Source license</h2>
+    <p>
+      The application source is provided under the MIT license. That source
+      license is separate from these website usage terms.
+    </p>
+  </article>
+</Layout>

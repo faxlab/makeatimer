@@ -1,0 +1,27 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config } from '../lib/config';
+---
+
+<Layout
+  title="Contact"
+  description="Contact Makeatimer about a calculation, accessibility issue, or question."
+  path="/contact/"
+>
+  <article class="prose">
+    <p class="eyebrow">Contact</p>
+    <h1>Something on your mind?</h1>
+    <p>
+      Email <a href={`mailto:${config.email}`}>{config.email}</a>.
+    </p>
+    <p>
+      For a calculation issue, include the tool name, the inputs, and the result
+      you expected. If you send a share link, check that it contains only
+      information you intend to share.
+    </p>
+    <p>
+      Operated by {config.operator}.{' '}
+      <a href="https://faxcorp.dev/company/">Company details</a>.
+    </p>
+  </article>
+</Layout>

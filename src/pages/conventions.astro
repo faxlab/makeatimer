@@ -1,0 +1,61 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Calculation conventions"
+  description="Understand fixed durations, calendar dates, time zones, rounding, and browser timer limits."
+  path="/conventions/"
+>
+  <article class="prose">
+    <p class="eyebrow">Calculation guide</p>
+    <h1>Know what your time means.</h1>
+    <h2>Durations and clock readings</h2>
+    <p>
+      Enter durations as H:MM or H:MM:SS. Minutes and seconds stay below 60, and
+      hours may exceed 24. Decimal arithmetic avoids binary rounding during
+      intermediate work. Durations display milliseconds, decimal amounts display
+      up to six places, and frame durations display up to six fractional
+      seconds.
+    </p>
+    <p>
+      Clock-reading tools use fixed arithmetic. A day is 24 hours and a week is
+      7 days in the unit converter. These values do not describe every real
+      calendar day when daylight saving changes.
+    </p>
+    <h2>Calendar dates</h2>
+    <p>
+      Dates use the ISO Gregorian calendar. Date differences exclude the end
+      date. Business-day calculations let you choose whether to include it.
+      Calendar month arithmetic clamps to the last valid day when the original
+      day is unavailable.
+    </p>
+    <h2>Time zones</h2>
+    <p>
+      City zones follow the rules in your browser’s time-zone database. Fixed
+      abbreviations such as PST (UTC−08:00) do not observe daylight saving.
+      Missing local times are rejected. Repeated times require a choice between
+      earlier and later occurrences.
+    </p>
+    <h2>Timers and sharing</h2>
+    <p>
+      Running duration timers use a finishing timestamp rather than counting
+      each browser tick. Pause stores the remaining duration; resume sets a new
+      finishing timestamp. Deadlines preserve an absolute instant and cannot
+      pause. Your device clock matters.
+    </p>
+    <p>
+      A shared duration reopens a preset. A shared deadline retains its absolute
+      instant across devices. Links never start a timer automatically. Session
+      storage restores active timing within the same tab, while favourites and
+      display settings stay in local storage.
+    </p>
+    <h2>Estimates</h2>
+    <p>
+      Speech uses the entered words-per-minute rate plus extra pauses. Render
+      estimates assume equal workers and whole frame batches, plus your overhead
+      percentage. Frame conversion uses an explicit frame rate; it does not
+      implement SMPTE or drop-frame timecode.
+    </p>
+  </article>
+</Layout>
