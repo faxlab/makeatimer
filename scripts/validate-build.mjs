@@ -62,6 +62,8 @@ for (const route of paths) {
 }
 const sitemap = await readFile('dist/sitemap.xml', 'utf8');
 assert.equal((sitemap.match(/<loc>/g) || []).length, 30);
+const notFound = await readFile('dist/404.html', 'utf8');
+assert.match(notFound, /name="robots" content="noindex,nofollow"/);
 async function scan(dir) {
   for (const file of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, file.name);
