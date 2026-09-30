@@ -20,7 +20,11 @@ Advertising is off until explicitly enabled. An approved publisher/site and an i
 
 For AdSense ownership verification before approval, set `PUBLIC_ADS_CLIENT` to the existing publisher's actual `ca-pub-…` identifier and use an explicit production build. The root `ads.txt` then publishes the authorized seller record even while advertising stays disabled. Select the ads.txt verification method in AdSense, verify the live file, and request site review. Preview builds and builds without a valid publisher ID keep the disabled placeholder. Publishing this seller record does not load advertising scripts or enable ad placements.
 
-Configure `PUBLIC_ADS_CLIENT` with the actual `ca-pub-…` identifier and the three manual slot IDs (`PUBLIC_ADS_SIDE_SLOT`, `PUBLIC_ADS_RESULT_SLOT`, `PUBLIC_ADS_CONTENT_SLOT`). Install the CMP's real loader/configuration according to its documentation and Google account settings. Have its adapter dispatch:
+Configure `PUBLIC_ADS_CLIENT` with the actual `ca-pub-…` identifier. Publish the three-choice European regulations message in Google's Privacy & messaging for this site, with the correct site name and privacy-policy URL. Set `PUBLIC_CONSENT_ENABLED=true` in a production build to load Google's standalone messaging tag while keeping `PUBLIC_ADS_ENABLED=false`. No ad-block recovery message or error-protection overlay is needed. The footer's Privacy choices button reopens Google's message where European choices apply.
+
+The built-in adapter follows [Google's JavaScript API](https://developers.google.com/funding-choices/fc-api-docs) and subscribes to the structured IAB TCF event API. Unknown/error states keep ads blocked. In European regions it requires resolved storage consent (Purpose 1) and Google vendor consent (755). AdSense reads the CMP's full TC string itself to determine its permitted advertising mode. The site does not decode TC strings or provide a homemade banner. Opening preferences suspends further requests and hides placements until the new choice is resolved; refusing after ads loaded clears placements and reloads the page.
+
+Configure the three manual slot IDs (`PUBLIC_ADS_SIDE_SLOT`, `PUBLIC_ADS_RESULT_SLOT`, `PUBLIC_ADS_CONTENT_SLOT`) before advertising activation. For an alternative certified CMP, replace the Google adapter and have it dispatch:
 
 ```js
 window.dispatchEvent(
@@ -30,9 +34,9 @@ window.dispatchEvent(
 );
 ```
 
-Dispatch `permitted: false` on refusal or revocation. Resolve the initial persisted consent state after the page handler is registered. Listen for `makeatimer:open-consent` to open the CMP preference manager from the footer. The adapter must honor the CMP/Google advertising mode; this site does not interpret raw TCF strings or supply a homemade consent banner.
+An alternative adapter must dispatch `permitted: false` on refusal or revocation, resolve initial persisted consent after the handler is registered, and connect the footer's preference button to its own manager. Honor the CMP/Google advertising mode.
 
-Set `PUBLIC_CMP_READY=true` only after testing this real integration. Then set `PUBLIC_ADS_ENABLED=true`. The privacy page describes advertising only in enabled builds.
+Test the real message on the production domain, including consent, refusal, saved choices, and preference reopening/revocation. Google's documented `?fc=alwaysshow&fctype=gdpr` URL previews the published message. Automated checks use a stubbed CMP and ad responses; they never request real ads. Set `PUBLIC_CMP_READY=true` only after real integration checks pass and set `PUBLIC_ADS_ENABLED=true` only after publisher/site approval. The privacy page describes consent messaging independently of ad activation. Default preview builds load neither messaging nor ads.
 
 Manual units have reserved space, load asynchronously after permission, and are filled at most once per page. Active, paused, and fullscreen timing views hide all placements. Ad refusal/revocation clears placements and reloads a previously loaded ad page so the CMP can resolve the new state. Tools remain usable when scripts fail or are blocked. No automatic refresh, floating anchors, overlays, or vignettes are configured here; keep account-side automatic formats off too.
 

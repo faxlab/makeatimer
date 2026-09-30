@@ -1042,6 +1042,9 @@ details .field {
   text-decoration: none;
   color: var(--muted);
 }
+.consent-pending .ad-slot {
+  visibility: hidden;
+}
 .site-footer small {
   font-size: 14px;
   color: var(--muted);

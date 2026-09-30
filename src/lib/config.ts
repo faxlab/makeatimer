@@ -3,8 +3,12 @@ export const config = {
   operator: import.meta.env.PUBLIC_OPERATOR_NAME || 'MB „Faxcorp“',
   email: import.meta.env.PUBLIC_CONTACT_EMAIL || 'hello@faxcorp.dev',
   launchReady: import.meta.env.PUBLIC_LAUNCH_READY === 'true',
+  consent:
+    import.meta.env.PUBLIC_CONSENT_ENABLED === 'true' &&
+    import.meta.env.PUBLIC_LAUNCH_READY === 'true',
   ads:
     import.meta.env.PUBLIC_ADS_ENABLED === 'true' &&
+    import.meta.env.PUBLIC_CONSENT_ENABLED === 'true' &&
     import.meta.env.PUBLIC_CMP_READY === 'true' &&
     import.meta.env.PUBLIC_LAUNCH_READY === 'true',
   client: import.meta.env.PUBLIC_ADS_CLIENT || '',
@@ -14,6 +18,10 @@ export const config = {
     content: import.meta.env.PUBLIC_ADS_CONTENT_SLOT || '',
   },
 };
+if (config.consent && !/^ca-pub-\d{16}$/.test(config.client))
+  throw new Error(
+    'Google consent messaging requires a valid public publisher ID.',
+  );
 if (
   config.launchReady &&
   (!import.meta.env.PUBLIC_OPERATOR_NAME?.trim() ||

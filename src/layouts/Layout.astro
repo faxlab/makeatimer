@@ -117,10 +117,18 @@ const canonical = new URL(path, config.origin).href;
         <a href="/privacy/">Privacy</a>
         <a href="/terms/">Terms</a>
         <a href="https://github.com/faxlab/makeatimer">Source</a>
-        {config.ads && (
-          <button id="consent-settings" class="quiet">
-            Ad preferences
-          </button>
+        {config.consent && (
+          <>
+            <button
+              id="consent-settings"
+              class="quiet"
+              disabled
+              title="Privacy settings are loading"
+            >
+              Privacy choices
+            </button>
+            <span id="consent-status" class="sr-only" role="status"></span>
+          </>
         )}
       </nav>
       <small>
@@ -172,9 +180,10 @@ const canonical = new URL(path, config.origin).href;
       });
       timingLinks();
     </script>
-    {config.ads && <script>
+    <script>
       import { config } from '../lib/config';
       import { adController } from '../lib/ads';
+      import { loadGoogleConsent } from '../lib/consent';
       const units = document.querySelectorAll<HTMLElement>('.ad-slot');
       const controller = adController(config.ads, {
         loadScript: () => {
@@ -201,9 +210,11 @@ const canonical = new URL(path, config.origin).href;
       });
       const island = document.querySelector('astro-island');
       let hydrated = !island || !island.hasAttribute('ssr');
+      let consentPending = false;
       const updateActivity = () => {
         controller.timing(
           !hydrated ||
+            consentPending ||
             document.body.classList.contains('timing-active') ||
             document.body.classList.contains('tool-error'),
         );
@@ -240,11 +251,37 @@ const canonical = new URL(path, config.origin).href;
         attributes: true,
         attributeFilter: ['class'],
       });
-      document
-        .querySelector('#consent-settings')
-        ?.addEventListener('click', () =>
-          window.dispatchEvent(new Event('makeatimer:open-consent')),
-        );
-    </script>}
+      if (config.consent) {
+        const button =
+          document.querySelector<HTMLButtonElement>('#consent-settings');
+        const status = document.querySelector<HTMLElement>('#consent-status');
+        const adapter = loadGoogleConsent(config.client, (state) => {
+          document.body.dataset.consentState = state.phase;
+          document.body.dataset.adConsent = state.permitted
+            ? 'permitted'
+            : 'blocked';
+          consentPending = state.phase === 'pending';
+          document.body.classList.toggle('consent-pending', consentPending);
+          // Keep requests suspended while preferences are open. Resolve the new choice before resuming.
+          if (!consentPending) controller.consent(state.permitted);
+          updateActivity();
+          if (!consentPending) visible.forEach((id) => controller.visible(id));
+          if (button) {
+            button.disabled = !state.canReopen;
+            button.title = state.canReopen
+              ? 'Change your privacy choices'
+              : state.phase === 'unavailable'
+                ? 'Privacy settings could not load. Advertising stays off.'
+                : 'European privacy choices do not apply to this visit';
+          }
+          if (status)
+            status.textContent =
+              state.phase === 'unavailable'
+                ? 'Privacy settings could not load. Advertising stays off; the tools remain available.'
+                : '';
+        });
+        button?.addEventListener('click', () => adapter.open());
+      }
+    </script>
   </body>
 </html>

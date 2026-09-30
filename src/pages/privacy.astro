@@ -9,7 +9,7 @@ import { config } from '../lib/config';
   path="/privacy/"
 >
   <article class="prose">
-    <p class="eyebrow">Updated September 29, 2026</p>
+    <p class="eyebrow">Updated September 30, 2026</p>
     <h1>Privacy</h1>
     <p>
       Makeatimer is operated by {config.operator}.{' '}
@@ -46,6 +46,30 @@ import { config } from '../lib/config';
       unnecessary for resolving the issue.
     </p>
     <h2>Advertising</h2>
+    {config.consent && (
+      <>
+        <p>
+          Google’s consent manager collects and stores your privacy choices.
+          Google processes connection and device information to deliver the
+          message and determine which regional choices apply. Where European
+          choices apply, use Privacy choices in the footer to reopen the message
+          and change or withdraw your decision. Your choices are supplied to
+          Google’s advertising services when advertising is enabled.
+        </p>
+        <p>
+          See{' '}
+          <a href="https://policies.google.com/privacy">
+            Google’s privacy policy
+          </a>{' '}
+          and its{' '}
+          <a href="https://policies.google.com/technologies/partner-sites">
+            partner-site privacy information
+          </a>
+          . Refusing consent or blocking these scripts does not prevent you from
+          using the tools.
+        </p>
+      </>
+    )}
     {config.ads ? (
       <>
         <p>
@@ -59,14 +83,15 @@ import { config } from '../lib/config';
           .
         </p>
         <p>
-          Use Ad preferences in the footer to manage your choices. The tools
+          Use Privacy choices in the footer to manage your choices. The tools
           work when advertising permission is refused or scripts are blocked.
         </p>
       </>
     ) : (
       <p>
-        Advertising is disabled in this version. No advertising or analytics
-        scripts are loaded by Makeatimer.
+        Advertising is disabled in this version. Makeatimer requests no ads and
+        loads no analytics scripts.
+        {!config.consent && ' No consent messaging script is loaded.'}
       </p>
     )}
     <h2>Your requests</h2>
