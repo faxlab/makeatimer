@@ -487,6 +487,21 @@ main {
   font-size: 14px;
   line-height: 1.45;
 }
+.field-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.field-presets button {
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+.field-presets button[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: var(--soft);
+  box-shadow: inset 0 -2px var(--ink);
+}
 .tabs {
   display: flex;
   gap: 0;
@@ -957,6 +972,56 @@ details .field {
 }
 .tool-content p {
   color: var(--muted);
+}
+.tool-content li {
+  margin-block: 8px;
+  color: var(--muted);
+}
+.tool-content .formula {
+  padding: 16px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--soft);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.guide-table {
+  overflow-x: auto;
+  margin-block: 24px;
+}
+.guide-table:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.guide-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+.guide-table caption {
+  text-align: left;
+  font-weight: 650;
+  margin-bottom: 12px;
+}
+.guide-table th,
+.guide-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.guide-table tbody th,
+.guide-table td {
+  white-space: nowrap;
+}
+.tool-content .guide-faq {
+  font-size: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.guide-faq summary {
+  min-height: 44px;
+  padding-block: 14px;
+  font-weight: 650;
 }
 .worked-example {
   border-left: 4px solid var(--family-colour, var(--green));

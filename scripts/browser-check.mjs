@@ -220,9 +220,9 @@ async function refinements(page, context, name) {
   assert.equal(await duration.inputValue(), '1:41:00');
   await page.goto(`${origin}/playback-speed/`);
   await ready(page);
-  await drag(page.getByLabel('Playback multiplier'), 80, 'Shift');
+  await drag(page.getByLabel('Playback multiplier', { exact: true }), 80, 'Shift');
   assert.equal(
-    await page.getByLabel('Playback multiplier').inputValue(),
+    await page.getByLabel('Playback multiplier', { exact: true }).inputValue(),
     '1.6',
   );
   assert.equal(await page.locator('.result-value').innerText(), '0:37:30');
@@ -380,6 +380,223 @@ async function refinements(page, context, name) {
   await noStorage.close();
   console.log(
     `${name}: drag adjustment, precision, Escape, keyboard, address-bar sharing (including blocked storage), live/paused/expired links, silent opening, and editable setup reload passed.`,
+  );
+}
+
+async function mediaGuides(page, context, name) {
+  await page.goto(`${origin}/playback-speed/`);
+  await ready(page);
+  const speed = page.getByLabel('Playback multiplier', { exact: true });
+  const playbackPresets = page.getByRole('group', {
+    name: 'Playback multiplier presets',
+    exact: true,
+  });
+  for (const [preset, duration, label, difference] of [
+    ['1.25×', '0:48:00', 'Time saved', '0:12:00'],
+    ['0.75×', '1:20:00', 'Extra time', '0:20:00'],
+    ['1×', '1:00:00', 'Time saved', '0:00:00'],
+    ['2×', '0:30:00', 'Time saved', '0:30:00'],
+  ]) {
+    const button = playbackPresets.getByRole('button', {
+      name: preset,
+      exact: true,
+    });
+    await button.click();
+    await page.waitForFunction(
+      (expected) =>
+        document.querySelector('.result-value')?.textContent === expected,
+      duration,
+    );
+    assert.equal(await button.getAttribute('aria-pressed'), 'true');
+    assert.equal(
+      await page.locator('.result-panel tbody th').innerText(),
+      label,
+    );
+    assert.equal(
+      await page.locator('.result-panel tbody td').innerText(),
+      difference,
+    );
+    assert.equal(await speed.evaluate((input) => input.validity.valid), true);
+  }
+  await speed.fill('1.5000');
+  assert.equal(
+    await playbackPresets
+      .getByRole('button', { name: '1.5×', exact: true })
+      .getAttribute('aria-pressed'),
+    'true',
+  );
+  await speed.fill('1.3333');
+  assert.equal(
+    await playbackPresets.locator('[aria-pressed="true"]').count(),
+    0,
+  );
+  await speed.fill('1.5');
+  await speed.press('ArrowUp');
+  assert.equal(await speed.inputValue(), '1.6');
+  await speed.press('Shift+ArrowDown');
+  assert.equal(await speed.inputValue(), '1.59');
+  const quarter = playbackPresets.getByRole('button', {
+    name: '1.25×',
+    exact: true,
+  });
+  await quarter.focus();
+  await quarter.press('Enter');
+  assert.equal(await speed.inputValue(), '1.25');
+  await page.evaluate(() => {
+    window.copiedMediaResult = '';
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (text) => {
+          window.copiedMediaResult = text;
+        },
+      },
+    });
+  });
+  await page.getByRole('button', { name: 'Copy result', exact: true }).click();
+  await page.waitForFunction(() =>
+    window.copiedMediaResult.includes('Time saved: 0:12:00'),
+  );
+  await page.getByRole('button', { name: 'Share link' }).click();
+  const sharedPlayback = await page
+    .getByLabel('Share link', { exact: true })
+    .inputValue();
+  assert(
+    sharedPlayback.includes('speed=1.25') && sharedPlayback.includes('v=1'),
+  );
+  await page.goto(sharedPlayback);
+  await ready(page);
+  await page.reload();
+  await ready(page);
+  assert.equal(await speed.inputValue(), '1.25');
+  assert.equal(
+    await page.locator('.result-panel tbody td').innerText(),
+    '0:12:00',
+  );
+  await speed.fill('');
+  await page.waitForSelector('.error');
+  await playbackPresets
+    .getByRole('button', { name: '1.5×', exact: true })
+    .click();
+  await page.waitForSelector('.result-value');
+  await page.getByLabel('Original duration', { exact: true }).fill('');
+  await playbackPresets
+    .getByRole('button', { name: '2×', exact: true })
+    .click();
+  assert.equal(
+    await page.getByLabel('Original duration', { exact: true }).inputValue(),
+    '',
+  );
+  assert.equal(await page.locator('.error').count(), 1);
+
+  await page.goto(`${origin}/frames-duration/`);
+  await ready(page);
+  const fps = page.getByLabel('Frames per second', { exact: true });
+  const fpsPresets = page.getByRole('group', {
+    name: 'Frames per second presets',
+    exact: true,
+  });
+  await fpsPresets.getByRole('button', { name: '23.976', exact: true }).click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.result-value')?.textContent === '0:01:40.1001',
+  );
+  assert.equal(await fps.evaluate((input) => input.validity.valid), true);
+  await fps.fill('29.97002997');
+  assert.equal(await fps.evaluate((input) => input.validity.valid), true);
+  assert.equal(await fpsPresets.locator('[aria-pressed="true"]').count(), 0);
+  await fps.fill('0');
+  await page.waitForSelector('.error');
+  await fpsPresets.getByRole('button', { name: '30', exact: true }).click();
+  await page.waitForSelector('.result-value');
+  assert.equal(
+    await page.getByLabel('Frame count', { exact: true }).inputValue(),
+    '2400',
+  );
+  await page.getByRole('button', { name: 'Share link' }).click();
+  const sharedFrames = await page
+    .getByLabel('Share link', { exact: true })
+    .inputValue();
+  await page.goto(sharedFrames);
+  await ready(page);
+  await page.reload();
+  await ready(page);
+  assert.equal(await fps.inputValue(), '30');
+  assert.equal(await page.locator('.result-value').innerText(), '0:01:20');
+
+  for (const theme of ['light', 'dark']) {
+    await page.getByLabel('Theme', { exact: true }).selectOption(theme);
+    for (const route of ['render-time', 'frames-duration', 'playback-speed']) {
+      await page.goto(`${origin}/${route}/`);
+      await ready(page);
+      const guide = page.getByRole('region', {
+        name: 'Calculation guide',
+        exact: true,
+      });
+      assert.equal(await guide.locator('details').count(), 3);
+      await guide.locator('summary').first().press('Enter');
+      assert.equal(
+        await guide.locator('details').first().getAttribute('open'),
+        '',
+      );
+      const audit = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze();
+      assert.deepEqual(
+        audit.violations.map((v) => v.id),
+        [],
+        `${name} ${theme} ${route} guide accessibility`,
+      );
+    }
+  }
+  await page.getByLabel('Theme', { exact: true }).selectOption('light');
+  await page.setViewportSize({ width: 320, height: 740 });
+  for (const route of ['render-time', 'frames-duration', 'playback-speed']) {
+    await page.goto(`${origin}/${route}/`);
+    await ready(page);
+    await noOverflow(page);
+    const tableRegion = page.locator('.guide-table');
+    if (
+      await tableRegion.evaluate(
+        (element) => element.scrollWidth > element.clientWidth,
+      )
+    ) {
+      await tableRegion.focus();
+      await tableRegion.press('ArrowRight');
+      await page.waitForFunction(
+        () => document.querySelector('.guide-table').scrollLeft > 0,
+      );
+    }
+  }
+  await page.setViewportSize({ width: 1366, height: 900 });
+  const staticContext = await context
+    .browser()
+    .newContext({ javaScriptEnabled: false });
+  try {
+    const staticPage = await staticContext.newPage();
+    for (const route of ['render-time', 'frames-duration', 'playback-speed']) {
+      await staticPage.goto(`${origin}/${route}/`);
+      assert.equal(await staticPage.locator('h1').count(), 1);
+      assert.equal(
+        await staticPage.locator('.guide-table tbody tr').count(),
+        route === 'playback-speed' ? 5 : 4,
+      );
+      assert.equal(await staticPage.locator('.guide-faq').count(), 3);
+      await staticPage.locator('.guide-faq summary').first().click();
+      assert.equal(
+        await staticPage.locator('.guide-faq').first().getAttribute('open'),
+        '',
+      );
+    }
+    assert.equal(
+      await staticPage.locator('.result-panel tbody td').innerText(),
+      '0:20:00',
+    );
+  } finally {
+    await staticContext.close();
+  }
+  console.log(
+    `${name}: media presets, keyboard, savings, copy, shared/custom inputs, static guides, light/dark accessibility and narrow table scrolling passed.`,
   );
 }
 
@@ -589,6 +806,7 @@ async function run(name, engine) {
     );
     await wayfinding(page, context, name);
     await refinements(page, context, name);
+    await mediaGuides(page, context, name);
     for (const viewport of [
       { width: 320, height: 740 },
       { width: 390, height: 844 },
@@ -596,7 +814,15 @@ async function run(name, engine) {
       { width: 768, height: 1024 },
     ]) {
       await page.setViewportSize(viewport);
-      for (const route of ['', 'tools/', 'timesheet/', 'meeting-planner/']) {
+      for (const route of [
+        '',
+        'tools/',
+        'timesheet/',
+        'meeting-planner/',
+        'render-time/',
+        'frames-duration/',
+        'playback-speed/',
+      ]) {
         await page.goto(`${origin}/${route}`);
         await hydrated(page);
         await noOverflow(page);

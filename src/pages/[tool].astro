@@ -5,6 +5,7 @@ import Timer from '../components/Timer.svelte';
 import Timing from '../components/Timing.svelte';
 import AdSlot from '../components/AdSlot.astro';
 import ToolHeading from '../components/ToolHeading.astro';
+import ToolGuide from '../components/ToolGuide.astro';
 import { familyStyle, getFamily } from '../lib/families';
 import { tools, getTool, toolPath } from '../lib/tools';
 export function getStaticPaths() {
@@ -42,24 +43,7 @@ const { tool } = Astro.props;
     </div>
     <AdSlot placement="side" />
   </div>
-  <section class="tool-content">
-    <h2>How to use {tool.name.toLowerCase()}</h2>
-    <p>{tool.intro}</p>
-    <div class="worked-example">
-      <p class="eyebrow">Worked example</p>
-      <p>{tool.example}</p>
-    </div>
-    <h2>What the result means</h2>
-    <p>{tool.convention}</p>
-    <p>
-      {tool.id === 'countdown'
-        ? 'Copy the address bar to share this countdown. A shared link opens immediately at the same finishing time, with sound off until enabled.'
-        : 'Use Copy result to copy the displayed answer. Share link preserves the inputs so someone else can open and edit the calculation. This link does not start timing or request permissions.'}
-    </p>
-    <p>
-      <a href="/conventions/">Read the calculation conventions →</a>
-    </p>
-  </section>
+  <ToolGuide {tool} />
   <AdSlot placement="content" />
   <section class="related">
     <div class="section-heading">

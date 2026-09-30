@@ -1,4 +1,4 @@
-import type { Field, Tool, ToolFamilyId, ToolEngine } from './types';
+import type { Field, Tool, ToolFamilyId, ToolEngine, Result } from './types';
 const field = (
   key: string,
   label: string,
@@ -72,6 +72,7 @@ const definition = (
   related: string[],
   value: string,
   detail = '',
+  rows?: Result['rows'],
 ): Tool => ({
   id,
   name,
@@ -83,7 +84,7 @@ const definition = (
   example,
   convention,
   related,
-  defaultResult: { value, detail },
+  defaultResult: { value, detail, rows },
 });
 
 export const tools: Tool[] = [
@@ -456,17 +457,29 @@ export const tools: Tool[] = [
     'Playback speed calculator',
     'rates-media',
     'rates',
-    'Find how long a video, podcast, or audiobook takes at a different playback speed.',
+    'Calculate video, podcast, or audiobook listening time at any playback speed. See the new duration, time saved or added, and worked examples.',
     'Enter the original media length and the playback multiplier. The result is the time you will spend listening or watching, assuming continuous playback without pauses.',
     [
       field('duration', 'Original duration', '1:00:00'),
-      numeric('speed', 'Playback multiplier', '1.5', 0.01, 100, 0.1),
+      {
+        ...numeric('speed', 'Playback multiplier', '1.5', 0.01, 100, 0.1),
+        step: 'any',
+        presets: [
+          ['0.75', '0.75×'],
+          ['1', '1×'],
+          ['1.25', '1.25×'],
+          ['1.5', '1.5×'],
+          ['1.75', '1.75×'],
+          ['2', '2×'],
+        ],
+      },
     ],
     'A one-hour recording at 1.5× speed takes 40 minutes. At 0.75× speed, it takes 1 hour 20 minutes.',
     'Duration is divided by speed. Seeking, ads, and pauses are not included.',
-    ['sum-durations', 'speech-duration', 'time-calculator'],
+    ['sum-durations', 'frames-duration', 'speech-duration'],
     '0:40:00',
     '1.5× playback · 40 minutes',
+    [['Time saved', '0:20:00']],
   ),
   definition(
     'speech-duration',
@@ -509,10 +522,10 @@ export const tools: Tool[] = [
   ),
   definition(
     'render-time',
-    'Render time estimate',
+    'Render time calculator',
     'rates-media',
     'rates',
-    'Estimate a frame render duration with parallel workers and adjustable overhead.',
+    'Estimate animation render time from frame count, seconds per frame, parallel workers, and overhead. See worked examples and planning limits.',
     'Use a representative per-frame render time to estimate completion. Enter equally capable workers and an overhead allowance for scheduling, transfers, or other work.',
     [
       numeric('frames', 'Frame count', '240', 1, 1e9, 1, true),
@@ -528,14 +541,27 @@ export const tools: Tool[] = [
   ),
   definition(
     'frames-duration',
-    'Frames to duration',
+    'Frames to seconds calculator',
     'rates-media',
     'rates',
-    'Convert a frame count to elapsed time at an explicit frame rate.',
+    'Convert frames to seconds, minutes, and hours at your chosen FPS. Compare common frame rates, use custom values, and see worked examples.',
     'Find the running length of an animation, clip, or sequence. Enter the actual frames-per-second value rather than a timecode label. Fractional frame rates are supported.',
     [
       numeric('frames', 'Frame count', '2400', 0, 1e12, 1, true),
-      numeric('fps', 'Frames per second', '24', 0.001, 100000, 0.1),
+      {
+        ...numeric('fps', 'Frames per second', '24', 0.001, 100000, 0.1),
+        step: 'any',
+        presets: [
+          ['23.976', '23.976'],
+          ['24', '24'],
+          ['25', '25'],
+          ['29.97', '29.97'],
+          ['30', '30'],
+          ['50', '50'],
+          ['59.94', '59.94'],
+          ['60', '60'],
+        ],
+      },
     ],
     '2,400 frames at 24 fps last 100 seconds, or 1:40. At 30 fps they last 80 seconds.',
     'This converts elapsed frames to seconds. It does not generate SMPTE timecode or implement drop-frame numbering.',

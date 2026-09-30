@@ -2,12 +2,34 @@
   import type { Field } from '../lib/types';
   import ZonePicker from './ZonePicker.svelte';
   import { dragValue } from '../lib/drag-value';
+  import { adjustValue } from '../lib/adjust-value';
   let {
     field,
     value = $bindable(''),
     prefix = '',
   } = $props<{ field: Field; value: string; prefix?: string }>();
   let id = $derived(`${prefix}${field.key}`);
+  function adjustPresetField(event: KeyboardEvent) {
+    if (
+      !field.presets ||
+      !field.adjustment ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      !['ArrowUp', 'ArrowDown'].includes(event.key)
+    )
+      return;
+    const next = adjustValue(
+      value,
+      event.key === 'ArrowUp' ? 1 : -1,
+      field.adjustment,
+      event.shiftKey,
+    );
+    if (next !== null) {
+      event.preventDefault();
+      value = next;
+    }
+  }
 </script>
 
 {#if field.type === 'zone'}
@@ -46,6 +68,7 @@
         oninput={(e) => {
           value = e.currentTarget.value;
         }}
+        onkeydown={adjustPresetField}
         min={field.min}
         max={field.max}
         step={field.step || 'any'}
@@ -54,5 +77,24 @@
       />
     {/if}
     {#if field.help}<small id={`${id}-help`}>{field.help}</small>{/if}
+    {#if field.presets?.length}
+      <div
+        class="field-presets"
+        role="group"
+        aria-label={`${field.label} presets`}
+      >
+        {#each field.presets as [preset, label]}
+          <button
+            type="button"
+            class="secondary"
+            aria-pressed={value.trim() !== '' &&
+              Number(value) === Number(preset)}
+            onclick={() => {
+              value = preset;
+            }}>{label}</button
+          >
+        {/each}
+      </div>
+    {/if}
   </div>
 {/if}

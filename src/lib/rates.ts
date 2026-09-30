@@ -4,10 +4,18 @@ export function calculate(id: string, v: Values): Result {
   switch (id) {
     case 'playback-speed': {
       const speed = number(v.speed, 'Playback speed', 0.01, 100);
-      const s = positiveDuration(v.duration).div(speed);
+      const original = positiveDuration(v.duration);
+      const s = original.div(speed);
+      const difference = original.sub(s);
       return {
         value: formatDuration(s),
         detail: `${v.speed}× playback · ${decimal(s.div(60))} minutes`,
+        rows: [
+          [
+            difference.lt(0) ? 'Extra time' : 'Time saved',
+            formatDuration(difference.abs()),
+          ],
+        ],
       };
     }
     case 'speech-duration': {

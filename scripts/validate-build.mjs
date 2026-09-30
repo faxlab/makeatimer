@@ -40,7 +40,7 @@ for (const route of paths) {
   assert(title && !titles.has(title), `Unique title: ${route}`);
   titles.add(title);
   assert.match(html, /name="description" content="[^"]+"/, route);
-  assert.match(html, /<h1[\s>]/, route);
+  assert.equal((html.match(/<h1[\s>]/g) || []).length, 1, `One H1: ${route}`);
   assert(
     html.includes(`https://makeatimer.com/${route ? route + '/' : ''}`),
     `Canonical: ${route}`,
@@ -59,6 +59,64 @@ for (const route of paths) {
     /(?:src|href|component-url|renderer-url)="(\/_astro\/[^"?]+)"/g,
   ))
     await readFile(path.join('dist', match[1]));
+  for (const [, href] of html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)) {
+    const url = new URL(href, 'https://makeatimer.com/');
+    if (url.origin === 'https://makeatimer.com')
+      await readFile(
+        path.join(
+          'dist',
+          url.pathname,
+          url.pathname.endsWith('/') ? 'index.html' : '',
+        ),
+      );
+  }
+  const guidePages = {
+    'render-time': [
+      'Render time calculator',
+      '/frames-duration/',
+      'ceil(frames ÷ workers)',
+    ],
+    'frames-duration': [
+      'Frames to seconds calculator',
+      '/playback-speed/',
+      'frame count ÷ frames per second',
+    ],
+    'playback-speed': [
+      'Playback speed calculator',
+      '/frames-duration/',
+      'original duration ÷ speed',
+    ],
+  };
+  if (guidePages[route]) {
+    const [name, connection, formula] = guidePages[route];
+    assert.equal(title, `${name} | Makeatimer`);
+    const guide = html.match(
+      /<section class="tool-content"[^>]*>(.*?)<\/section>/s,
+    )?.[1];
+    assert(guide?.includes(formula), `Prerendered formula: ${route}`);
+    assert(
+      guide.includes('Worked examples') &&
+        guide.includes('<table>') &&
+        guide.includes('<caption>'),
+      `Prerendered examples: ${route}`,
+    );
+    assert.equal(
+      (guide.match(/<details\b/g) || []).length,
+      3,
+      `Prerendered FAQs: ${route}`,
+    );
+    assert(guide.includes(`href="${connection}"`), `Contextual link: ${route}`);
+    assert(
+      !html
+        .match(/<astro-island[^>]*>/g)
+        ?.some((island) =>
+          /Will twice as many workers|Which frame rate should I enter|Does 1\.5× speed save/.test(
+            island,
+          ),
+        ),
+      `Guide excluded from client props: ${route}`,
+    );
+  }
 }
 const sitemap = await readFile('dist/sitemap.xml', 'utf8');
 assert.equal((sitemap.match(/<loc>/g) || []).length, 30);

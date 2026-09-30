@@ -10,6 +10,7 @@ export type Field = {
   default: string;
   help?: string;
   options?: [string, string][];
+  presets?: [value: string, label: string][];
   min?: string;
   max?: string;
   step?: string;

@@ -1,0 +1,93 @@
+---
+import type { Tool } from '../lib/types';
+import { guides } from '../lib/guides';
+import { getTool, toolPath } from '../lib/tools';
+const { tool } = Astro.props as { tool: Tool };
+const guide = guides[tool.id];
+---
+
+<section class="tool-content" aria-label="Calculation guide">
+  <h2>How to use {tool.name.toLowerCase()}</h2>
+  <p>{tool.intro}</p>
+  {guide ? (
+    <>
+      <ol>
+        {guide.steps.map((step) => (
+          <li>{step}</li>
+        ))}
+      </ol>
+      <h2>How the calculation works</h2>
+      <p class="formula">{guide.formula}</p>
+      <p>{guide.explanation}</p>
+      <h2>Worked examples</h2>
+      {guide.examples.map((example) => (
+        <div class="worked-example">
+          <h3>{example.title}</h3>
+          <p>{example.text}</p>
+        </div>
+      ))}
+      <div
+        class="guide-table"
+        role="region"
+        aria-label={guide.table.caption}
+        tabindex="0"
+      >
+        <table>
+          <caption>{guide.table.caption}</caption>
+          <thead>
+            <tr>
+              {guide.table.headers.map((header) => (
+                <th scope="col">{header}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {guide.table.rows.map(([label, ...cells]) => (
+              <tr>
+                <th scope="row">{label}</th>
+                {cells.map((cell) => (
+                  <td>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  ) : (
+    <div class="worked-example">
+      <p class="eyebrow">Worked example</p>
+      <p>{tool.example}</p>
+    </div>
+  )}
+  <h2>What the result means</h2>
+  <p>{tool.convention}</p>
+  {guide && (
+    <>
+      <h2>Common questions</h2>
+      {guide.faqs.map((faq) => (
+        <details class="guide-faq">
+          <summary>{faq.question}</summary>
+          <p>{faq.answer}</p>
+        </details>
+      ))}
+      <h2>Continue your calculation</h2>
+      <ul>
+        {guide.connections.map((link) => (
+          <li>
+            <a href={toolPath(link.id)}>{getTool(link.id).name}</a> —{' '}
+            {link.text}
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
+  <p>
+    {tool.id === 'countdown'
+      ? 'Copy the address bar to share this countdown. A shared link opens immediately at the same finishing time, with sound off until enabled.'
+      : 'Use Copy result to copy the displayed answer. Share link preserves the inputs so someone else can open and edit the calculation. This link does not start timing or request permissions.'}
+  </p>
+  <p>
+    <a href="/conventions/">Read the calculation conventions →</a>
+  </p>
+</section>
