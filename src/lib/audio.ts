@@ -1,11 +1,21 @@
 export type Sound = 'bell' | 'beep' | 'silent';
 let context: AudioContext | undefined;
 export async function unlockAudio() {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
     context ??= new AudioContext();
-    await context.resume();
+    // Some browsers leave resume() pending when audio output is unavailable.
+    await Promise.race([
+      context.resume(),
+      new Promise<void>((resolve) => {
+        timeout = setTimeout(resolve, 500);
+      }),
+    ]);
+    return context.state === 'running';
   } catch {
-    /* Timer works without audio. */
+    return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 export function playSound(sound: Sound) {

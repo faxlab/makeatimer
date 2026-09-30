@@ -263,7 +263,7 @@
     error = '';
     restored = false;
     try {
-      await unlockAudio();
+      void unlockAudio();
       now = Date.now();
       if (inputs.mode === 'duration') {
         if (

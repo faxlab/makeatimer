@@ -188,7 +188,7 @@
       return;
     }
     error = '';
-    await unlockAudio();
+    void unlockAudio();
     if (status === 'finished') {
       base = 0;
       elapsed = 0;
