@@ -2,7 +2,23 @@
 
 Build with `npm ci` followed by `npm run verify`. Deploy only `dist/`. The supplied `wrangler.jsonc` configures static assets, directory-style URLs, and the 404 page; there is no runtime Worker or backend service.
 
-Connect the public repository to Cloudflare Workers Builds. Use `main` for production and set the build command to `npm ci && npm run check && npm test && npm run build:production`. Wrangler is pinned in the lockfile. Set the deploy command to `npm run deploy`, which refuses noindex preview output. Do not place credentials in this repository.
+The current workflow verifies changes in GitHub Actions and deploys from the Wrangler CLI. GitHub verification does not deploy the site. Use an existing Wrangler login or a scoped deployment credential kept outside the repository.
+
+Run from the repository root:
+
+```sh
+npm ci
+npm run verify
+npx playwright install chromium firefox webkit
+npm run browser-check
+npm run ad-check
+npm run build:production
+npm run deploy
+```
+
+`verify` creates a noindex preview for browser checks. The final production build enables indexing, and `deploy` refuses preview output. Wrangler is pinned in the lockfile.
+
+Cloudflare Workers Builds is an optional alternative. Use `main`, build with `npm ci && npm run check && npm test && npm run build:production`, and deploy with `npm run deploy`. Configure the required production variables and a deployment credential with permissions limited to the intended service. Connecting a managed build is separate from this repository's verification workflow.
 
 ## Production configuration
 
@@ -24,6 +40,8 @@ Configure `PUBLIC_ADS_CLIENT` with the actual `ca-pub-…` identifier. Publish t
 
 The built-in adapter follows [Google's JavaScript API](https://developers.google.com/funding-choices/fc-api-docs) and subscribes to the structured IAB TCF event API. Unknown/error states keep ads blocked. In European regions it requires resolved storage consent (Purpose 1) and Google vendor consent (755). AdSense reads the CMP's full TC string itself to determine its permitted advertising mode. The site does not decode TC strings or provide a homemade banner. Opening preferences suspends further requests and hides placements until the new choice is resolved; refusing after ads loaded clears placements and reloads the page.
 
+If Google does not deliver a usable message or reopen preferences within 30 seconds, the footer reports that privacy settings could not load and disables the unusable control. Tools remain available and the advertising gate stays closed. A later valid CMP response can recover. Once the CMP reports its UI open, the adapter gives the visitor unlimited time to decide. Initial API readiness and passing fixture tests do not prove that Google's real message appears.
+
 Configure the three manual slot IDs (`PUBLIC_ADS_SIDE_SLOT`, `PUBLIC_ADS_RESULT_SLOT`, `PUBLIC_ADS_CONTENT_SLOT`) before advertising activation. For an alternative certified CMP, replace the Google adapter and have it dispatch:
 
 ```js
@@ -36,7 +54,7 @@ window.dispatchEvent(
 
 An alternative adapter must dispatch `permitted: false` on refusal or revocation, resolve initial persisted consent after the handler is registered, and connect the footer's preference button to its own manager. Honor the CMP/Google advertising mode.
 
-Test the real message on the production domain, including consent, refusal, saved choices, and preference reopening/revocation. Google's documented `?fc=alwaysshow&fctype=gdpr` URL previews the published message. Automated checks use a stubbed CMP and ad responses; they never request real ads. Set `PUBLIC_CMP_READY=true` only after real integration checks pass and set `PUBLIC_ADS_ENABLED=true` only after publisher/site approval. The privacy page describes consent messaging independently of ad activation. Default preview builds load neither messaging nor ads.
+Test the real message on the production domain, including consent, refusal, saved choices, and preference reopening/revocation. Google's documented `?fc=alwaysshow&fctype=gdpr` URL previews the published message. Automated checks use a stubbed CMP and ad responses; they never request real ads. Set `PUBLIC_CMP_READY=true` only after real integration checks pass and set `PUBLIC_ADS_ENABLED=true` only after publisher/site approval. Set the activation flag in the shell or managed build environment: the explicit release commands default `PUBLIC_ADS_ENABLED` to `false`, overriding an `.env`-only activation value. The privacy page describes consent messaging independently of ad activation. Default preview builds load neither messaging nor ads.
 
 Manual units have reserved space, load asynchronously after permission, and are filled at most once per page. Active, paused, and fullscreen timing views hide all placements. Ad refusal/revocation clears placements and reloads a previously loaded ad page so the CMP can resolve the new state. Tools remain usable when scripts fail or are blocked. No automatic refresh, floating anchors, overlays, or vignettes are configured here; keep account-side automatic formats off too.
 

@@ -220,7 +220,11 @@ async function refinements(page, context, name) {
   assert.equal(await duration.inputValue(), '1:41:00');
   await page.goto(`${origin}/playback-speed/`);
   await ready(page);
-  await drag(page.getByLabel('Playback multiplier', { exact: true }), 80, 'Shift');
+  await drag(
+    page.getByLabel('Playback multiplier', { exact: true }),
+    80,
+    'Shift',
+  );
   assert.equal(
     await page.getByLabel('Playback multiplier', { exact: true }).inputValue(),
     '1.6',

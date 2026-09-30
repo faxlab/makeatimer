@@ -40,6 +40,8 @@ npm run performance-check
 
 The browser check starts its own local static server and verifies the built output. It checks every calculator, share round trips, invalid inputs, timer recovery, intervals, laps, CSV, fullscreen, directory filtering/favourites, tool navigation, saved themes, keyboard menus, first-screen mobile Start, and isolated new timing tabs. It includes 320px layouts and reflow at an equivalent 200% desktop zoom, plus automated light/dark accessibility checks. Screenshots stay in ignored `output/playwright/`. WebKit/device emulation is not a test on a physical iPad.
 
+The ad check uses isolated CMP and advertising fixtures. It covers consent/refusal, preference reopening, stalled delivery, late recovery, and blocked scripts without requesting live ads. Real publisher approval and real consent interactions remain separate deployment checks.
+
 ## Calculation rules
 
 Durations accept `H:MM` or `H:MM:SS`. Clock calculations use fixed durations; calendar calculations use the Gregorian calendar. Time-zone conversions reject nonexistent times and require an explicit earlier/later selection for repeated times. Fixed PST is separate from seasonal Los Angeles time.
