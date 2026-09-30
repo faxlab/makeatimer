@@ -1110,6 +1110,12 @@ details .field {
 .consent-pending .ad-slot {
   visibility: hidden;
 }
+.consent-status:not(.sr-only) {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 8px;
+}
 .site-footer small {
   font-size: 14px;
   color: var(--muted);

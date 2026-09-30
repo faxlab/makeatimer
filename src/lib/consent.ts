@@ -47,16 +47,29 @@ export function consentState(
 export function googleConsentAdapter(
   host: ConsentHost,
   update: (state: ConsentState) => void,
+  timeoutMs = 30_000,
 ) {
   const fc = (host.googlefc ||= {});
   fc.callbackQueue ||= [] as Record<string, () => void>[];
   let subscribed = false;
   let reopening = false;
   let canReopen = false;
+  let deadline: ReturnType<typeof setTimeout> | undefined;
+  const stopWaiting = () => {
+    clearTimeout(deadline);
+    deadline = undefined;
+  };
   const unavailable = () => {
+    stopWaiting();
     canReopen = false;
     update({ phase: 'unavailable', permitted: false, canReopen: false });
   };
+  const waitForMessage = () => {
+    stopWaiting();
+    deadline = setTimeout(unavailable, timeoutMs);
+  };
+  update({ phase: 'pending', permitted: false, canReopen: false });
+  waitForMessage();
   fc.callbackQueue!.push({
     CONSENT_API_READY: () => {
       if (subscribed) return;
@@ -70,9 +83,13 @@ export function googleConsentAdapter(
             reopening &&
             state.phase !== 'unavailable' &&
             data?.eventStatus !== 'useractioncomplete'
-          )
+          ) {
+            // A displayed CMP owns the user's decision time; never time out while they read it.
+            if (data?.eventStatus === 'cmpuishown') stopWaiting();
             update({ ...state, phase: 'pending', permitted: false });
-          else {
+          } else {
+            if (state.phase !== 'pending' || data?.eventStatus === 'cmpuishown')
+              stopWaiting();
             if (state.phase !== 'pending') reopening = false;
             update(state);
           }
@@ -88,6 +105,7 @@ export function googleConsentAdapter(
       if (!canReopen) return;
       reopening = true;
       update({ phase: 'pending', permitted: false, canReopen: true });
+      waitForMessage();
       fc.callbackQueue!.push({
         CONSENT_API_READY: () => {
           try {

@@ -211,9 +211,63 @@ try {
   await page.getByLabel('Unpaid break minutes').fill('60');
   assert.equal(await page.locator('.result-value').textContent(), '7:30:00');
   assert.equal(await requests(), 0);
+  // A delivered API without a usable message must not leave a dead settings button.
+  await page.route('**/fundingchoicesmessages.google.com/**', async (route) => {
+    await route.fulfill({
+      contentType: 'text/javascript',
+      body: `
+      let listener;
+      window.__cmpResolve = (permitted) => listener?.({
+        cmpId: 300, cmpStatus: 'loaded', gdprApplies: true,
+        eventStatus: 'useractioncomplete', tcString: 'fixture-only',
+        purpose: { consents: { 1: permitted } }, vendor: { consents: { 755: permitted } }
+      }, true);
+      window.__tcfapi = (command, version, callback) => {
+        listener = callback;
+        callback({ cmpId: 300, cmpStatus: 'loaded', gdprApplies: true, eventStatus: 'tcloaded', tcString: '' }, true);
+      };
+      window.googlefc.showRevocationMessage = () => {};
+      const queue = window.googlefc.callbackQueue;
+      window.googlefc.callbackQueue = { push(entry) { entry.CONSENT_API_READY?.(); } };
+      queue.forEach(entry => entry.CONSENT_API_READY?.());
+      `,
+    });
+  });
+  await page.clock.install();
+  await page.reload();
+  await ready();
+  await page.clock.fastForward(30_001);
+  assert.equal(
+    await page.locator('body').getAttribute('data-consent-state'),
+    'unavailable',
+  );
+  assert.equal(await page.locator('#consent-settings').isEnabled(), false);
+  assert.equal(await page.locator('#consent-status').isVisible(), true);
+  assert.match(
+    await page.locator('#consent-status').innerText(),
+    /Advertising stays off/,
+  );
+  assert.equal(await requests(), 0);
+  await consent(true);
+  assert.equal(await page.locator('#consent-settings').isEnabled(), true);
+  assert.equal(await page.locator('#consent-status').innerText(), '');
+  assert.equal(await requests(), 0);
+  await page.locator('#consent-settings').click();
+  await page.clock.fastForward(30_001);
+  assert.equal(
+    await page.locator('body').getAttribute('data-consent-state'),
+    'unavailable',
+  );
+  assert.equal(await requests(), 0);
+  await consent(false);
+  assert.equal(
+    await page.locator('body').getAttribute('data-ad-consent'),
+    'blocked',
+  );
+  assert.equal(await page.locator('#consent-settings').isEnabled(), true);
   assert.deepEqual(errors, []);
   console.log(
-    'Ad/CMP fixtures passed: consent/refusal/revocation, one base tag, preference reopening, no manual requests in consent-only builds, blocked scripts, stable slots, mobile/desktop, active/paused/restored/fullscreen/error suppression. No live ads were requested.',
+    'Ad/CMP fixtures passed: consent/refusal/revocation, one base tag, preference reopening, silent-message timeouts and late recovery, no manual requests in consent-only builds, blocked scripts, stable slots, mobile/desktop, active/paused/restored/fullscreen/error suppression. No live ads were requested.',
   );
 } finally {
   await browser.close();
