@@ -187,9 +187,11 @@ const canonical = new URL(path, config.origin).href;
       const units = document.querySelectorAll<HTMLElement>('.ad-slot');
       const controller = adController(config.ads, {
         loadScript: () => {
+          if (document.querySelector('script[data-makeatimer-adsense]')) return;
           const script = document.createElement('script');
           script.async = true;
           script.crossOrigin = 'anonymous';
+          script.dataset.makeatimerAdsense = '';
           script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${config.client}`;
           script.onerror = () => {};
           document.head.append(script);

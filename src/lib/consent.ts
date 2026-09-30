@@ -125,18 +125,16 @@ export function loadGoogleConsent(
       island.addEventListener('astro:hydrate', proceed, { once: true });
     else proceed();
   };
-  // Presence marker from Google's generated standalone tag. No ad-block recovery message is configured.
-  if (!document.querySelector('iframe[name="googlefcPresent"]')) {
-    const frame = document.createElement('iframe');
-    frame.name = 'googlefcPresent';
-    frame.title = 'Consent manager presence';
-    frame.style.display = 'none';
-    document.body.append(frame);
+  // AdSense deploys its published European message through its base tag.
+  // Auto ads must stay off; manual units are pushed only by the consent-gated controller.
+  if (!document.querySelector('script[data-makeatimer-adsense]')) {
+    const script = document.createElement('script');
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.dataset.makeatimerAdsense = '';
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`;
+    script.onerror = adapter.fail;
+    document.head.append(script);
   }
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://fundingchoicesmessages.google.com/i/${client.replace(/^ca-/, '')}?ers=1`;
-  script.onerror = adapter.fail;
-  document.head.append(script);
   return adapter;
 }
