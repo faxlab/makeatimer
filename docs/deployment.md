@@ -2,13 +2,15 @@
 
 Build with `npm ci` followed by `npm run verify`. Deploy only `dist/`. The supplied `wrangler.jsonc` configures static assets, directory-style URLs, and the 404 page; there is no runtime Worker or backend service.
 
-Connect the public repository to Cloudflare Workers Builds. Use `main` for production and set the build command to `npm ci && npm run verify && npm run release-check`. Install pinned Wrangler as the deployment tool or use Cloudflare's managed tooling. Set the deploy command to `npx wrangler deploy`. Do not place credentials in this repository.
+Connect the public repository to Cloudflare Workers Builds. Use `main` for production and set the build command to `npm ci && npm run check && npm test && npm run build:production`. Wrangler is pinned in the lockfile. Set the deploy command to `npm run deploy`, which refuses noindex preview output. Do not place credentials in this repository.
 
 ## Production configuration
 
 Set `PUBLIC_LAUNCH_READY=true`, `PUBLIC_OPERATOR_NAME` to the confirmed legal operator name, and `PUBLIC_CONTACT_EMAIL` to the public contact address. Build and review About, Contact, Privacy, and Terms. The build refuses indexing without those values. Preview/PR environments must use `PUBLIC_LAUNCH_READY=false`; their robots file disallows crawling and every page uses noindex.
 
 Configure `makeatimer.com` as the custom domain. In Cloudflare, configure an HTTPS redirect from `www.makeatimer.com/*` to `https://makeatimer.com/$1`, preserving the path and query. Do not add an application Worker for this redirect. Verify TLS, redirects, real 404s, canonicals, robots, and the sitemap after deployment.
+
+`scripts/production-env.mjs` supplies the confirmed public operator/contact defaults only to explicit release commands. Normal builds remain previews. Public Workers subdomains and version URLs are disabled in Wrangler configuration to avoid duplicate indexed copies.
 
 Submit `https://makeatimer.com/sitemap.xml` after verifying domain ownership in Search Console. Submission is separate from indexing or ranking. Optional analytics requires a deliberate integration and a matching privacy update; no analytics script is included by default.
 

@@ -2,6 +2,8 @@
 
 A free, open-source collection of 24 timers and time calculators. Static Astro pages with Svelte interfaces, TypeScript calculation modules, decimal duration arithmetic, and Temporal calendar/time-zone handling. No accounts, database, or calculation API.
 
+Use the tools at [makeatimer.com](https://makeatimer.com).
+
 ![Makeatimer homepage](assets/preview.png)
 
 ## Run locally
@@ -50,6 +52,17 @@ npm run preview
 ```
 
 Deploy `dist/` as Cloudflare Workers Static Assets using `wrangler.jsonc`. See [deployment instructions](docs/deployment.md). Default builds are previews with `noindex` and advertising off. Production requires confirmed operator/contact configuration and `PUBLIC_LAUNCH_READY=true`; keep that flag false for previews.
+
+The explicit production command applies the public operator/contact defaults and enables indexing. Run checks before deploying:
+
+```sh
+npm run check
+npm test
+npm run build:production
+npm run deploy
+```
+
+`npm run deploy` rejects a preview build. Credentials stay in Wrangler's login or managed deployment secrets. Public `workers.dev` and version preview URLs are disabled; production serves on the custom domain.
 
 ## Source layout
 

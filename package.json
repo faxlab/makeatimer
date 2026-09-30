@@ -11,6 +11,8 @@
     "check": "astro check && svelte-check --tsconfig ./tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
     "build": "astro build && node scripts/validate-build.mjs",
+    "build:production": "node scripts/build-production.mjs",
+    "deploy": "node scripts/deploy.mjs",
     "preview": "astro preview --host 127.0.0.1",
     "browser-check": "node scripts/browser-check.mjs",
     "ad-check": "node scripts/ad-browser-check.mjs",
@@ -38,6 +40,7 @@
     "sharp": "0.35.5",
     "svelte-check": "4.7.6",
     "tsx": "4.23.15",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "wrangler": "4.144.0"
   }
 }

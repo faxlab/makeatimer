@@ -1,6 +1,6 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules"],
+  "exclude": ["dist", "node_modules", "output", ".wrangler", ".playwright-cli"],
   "compilerOptions": { "types": ["node"], "verbatimModuleSyntax": true }
 }
