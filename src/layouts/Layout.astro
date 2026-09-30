@@ -1,12 +1,15 @@
 ---
 import '../styles/global.css';
 import { config } from '../lib/config';
+import ToolNavigation from '../components/ToolNavigation.astro';
+import { familyStyle } from '../lib/families';
 const {
   title,
   description,
   path = '/',
   app = false,
   noindex = false,
+  family,
 } = Astro.props;
 const canonical = new URL(path, config.origin).href;
 ---
@@ -16,7 +19,7 @@ const canonical = new URL(path, config.origin).href;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#285c45" />
+    <meta name="theme-color" content="#111416" />
     <title>{title} | Makeatimer</title>
     <meta name="description" content={description} />
     <meta
@@ -50,6 +53,7 @@ const canonical = new URL(path, config.origin).href;
       />
     )}
     <script is:inline>
+      document.documentElement.classList.add('has-js');
       try {
         const t = localStorage.getItem('makeatimer:theme');
         if (t === 'light' || t === 'dark')
@@ -62,33 +66,42 @@ const canonical = new URL(path, config.origin).href;
       Skip to content
     </a>
     <header class="site-header">
-      <a href="/" class="brand" aria-label="Makeatimer homepage">
-        <img src="/favicon.svg" width="30" height="30" alt="" />
-        makeatimer<span class="brand-dot">.</span>
-      </a>
-      <nav aria-label="Main navigation">
-        <a href="/" aria-current={path === '/' ? 'page' : undefined}>
-          Timer
+      <div class="header-inner">
+        <a href="/" class="brand" aria-label="Makeatimer homepage">
+          <img src="/favicon.svg" width="30" height="30" alt="" />
+          makeatimer<span class="brand-dot">.</span>
         </a>
-        <a
-          href="/tools/"
-          aria-current={path === '/tools/' ? 'page' : undefined}
-        >
-          All tools <span class="count">24</span>
-        </a>
-        <button
-          id="theme-toggle"
-          class="theme-toggle"
-          aria-label="Change color theme"
-          title="Color theme: system"
-        >
-          ◐
-        </button>
-      </nav>
+        <nav aria-label="Main navigation">
+          <a href="/" aria-current={path === '/' ? 'page' : undefined}>
+            Timer
+          </a>
+          <a
+            href="/tools/"
+            aria-current={path === '/tools/' ? 'page' : undefined}
+          >
+            All tools <span class="count">24</span>
+          </a>
+          <div class="theme-control">
+            <label for="theme-select">Theme</label>
+            <select id="theme-select">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+        </nav>
+      </div>
     </header>
-    <main id="main">
-      <slot />
-    </main>
+    <div class="site-shell">
+      <ToolNavigation {path} {family} />
+      <main
+        id="main"
+        class="family-scope"
+        style={family ? familyStyle(family) : undefined}
+      >
+        <slot />
+      </main>
+    </div>
     <footer class="site-footer">
       <div>
         <a class="brand" href="/">
@@ -114,33 +127,41 @@ const canonical = new URL(path, config.origin).href;
       </small>
     </footer>
     <script>
-      const button = document.querySelector<HTMLButtonElement>('#theme-toggle');
-      function showTheme() {
-        if (button) {
-          const theme = document.documentElement.dataset.theme || 'system';
-          button.title = `Color theme: ${theme}`;
-          button.setAttribute(
-            'aria-label',
-            `Color theme: ${theme}. Change theme`,
-          );
-        }
-      }
-      showTheme();
-      button?.addEventListener('click', () => {
-        const current = document.documentElement.dataset.theme || 'system';
-        const theme =
-          current === 'system'
-            ? 'light'
-            : current === 'light'
-              ? 'dark'
-              : 'system';
+      const select = document.querySelector<HTMLSelectElement>('#theme-select');
+      if (select)
+        select.value = document.documentElement.dataset.theme || 'system';
+      select?.addEventListener('change', () => {
+        const theme = select.value;
         if (theme === 'system') delete document.documentElement.dataset.theme;
         else document.documentElement.dataset.theme = theme;
         try {
           localStorage.setItem('makeatimer:theme', theme);
         } catch {}
-        showTheme();
       });
+      // Keep the original timing tab alive when the user deliberately browses elsewhere.
+      function timingLinks() {
+        const active = document.body.classList.contains('timing-active');
+        document
+          .querySelectorAll<HTMLAnchorElement>('a[href^="/"]')
+          .forEach((link) => {
+            if (link.getAttribute('href')?.startsWith('/#')) return;
+            if (active) {
+              link.target = '_blank';
+              link.rel = 'noopener';
+              link.title =
+                'Opens in a new tab to keep your timing session available';
+            } else {
+              link.removeAttribute('target');
+              link.removeAttribute('rel');
+              link.removeAttribute('title');
+            }
+          });
+      }
+      new MutationObserver(timingLinks).observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+      timingLinks();
     </script>
     {config.ads && <script>
       import { config } from '../lib/config';

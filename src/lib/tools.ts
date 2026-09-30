@@ -1,10 +1,4 @@
-import type { Field, Tool } from './types';
-export const categories = [
-  'Timing',
-  'Duration & work',
-  'Calendar & zones',
-  'Specialist',
-];
+import type { Field, Tool, ToolFamilyId, ToolEngine } from './types';
 const field = (
   key: string,
   label: string,
@@ -37,7 +31,8 @@ const units: [string, string][] = [
 const definition = (
   id: string,
   name: string,
-  category: number,
+  family: ToolFamilyId,
+  engine: ToolEngine,
   description: string,
   intro: string,
   fields: Field[],
@@ -49,7 +44,8 @@ const definition = (
 ): Tool => ({
   id,
   name,
-  category: categories[category],
+  family,
+  engine,
   description,
   intro,
   fields,
@@ -63,7 +59,8 @@ export const tools: Tool[] = [
   definition(
     'timer',
     'Online timer',
-    0,
+    'timers',
+    null,
     'Start a free online timer in seconds, or count down to a clock time in any time zone.',
     'Set a duration for cooking, study, or a short break. Switch to Until to finish at a particular clock time, including a time in another part of the world. Keep this tab available for the alarm.',
     [],
@@ -75,7 +72,8 @@ export const tools: Tool[] = [
   definition(
     'countdown',
     'Countdown to a date',
-    0,
+    'timers',
+    null,
     'Create an editable countdown to an event with an exact date, time, and time zone.',
     'Count down to an appointment, launch, birthday, or trip. Give the event a name and choose its date and time zone. Shared links preserve the exact instant so viewers in different zones count down to the same event.',
     [],
@@ -87,7 +85,8 @@ export const tools: Tool[] = [
   definition(
     'stopwatch',
     'Stopwatch with laps',
-    0,
+    'timers',
+    null,
     'Measure elapsed time with a free stopwatch, pause controls, and split laps.',
     'Measure a task, a practice session, or a race. Record laps without stopping the overall clock. Each lap shows the split since the previous lap and the total elapsed time.',
     [],
@@ -99,7 +98,8 @@ export const tools: Tool[] = [
   definition(
     'interval-timer',
     'Work & rest interval timer',
-    0,
+    'timers',
+    null,
     'Repeat work and rest intervals for exercise, focus sessions, or practice.',
     'Set a work period, a rest period, and the number of rounds. The timer advances automatically, announces phase changes when sound is available, and finishes immediately after the final work period.',
     [
@@ -115,7 +115,8 @@ export const tools: Tool[] = [
   definition(
     'time-calculator',
     'Time calculator',
-    1,
+    'time-math',
+    'work',
     'Add, subtract, multiply, or divide hours, minutes, and seconds without converting them by hand.',
     'Combine durations, find a difference, or scale a task estimate. Use hours:minutes:seconds for durations and a plain number for multiplication or division. Negative results are supported.',
     [
@@ -137,7 +138,8 @@ export const tools: Tool[] = [
   definition(
     'sum-durations',
     'Sum durations',
-    1,
+    'time-math',
+    'work',
     'Add a list of times to find a playlist, agenda, or total task duration.',
     'Enter one duration per line to total a playlist, video sequence, or schedule. Blank lines are ignored. Hours can exceed 24, so long projects do not wrap back to zero.',
     [
@@ -158,7 +160,8 @@ export const tools: Tool[] = [
   definition(
     'time-between',
     'Time between clock readings',
-    1,
+    'time-math',
+    'work',
     'Calculate the hours and minutes between two clock times, including overnight periods.',
     'Find how long a shift, class, or activity lasts from its start and end clock readings. Select Next day when the end belongs to the following day.',
     [
@@ -175,7 +178,8 @@ export const tools: Tool[] = [
   definition(
     'work-hours',
     'Work hours calculator',
-    1,
+    'work',
+    'work',
     'Calculate working time after unpaid breaks for a daytime or overnight shift.',
     'Enter your shift times and the total number of unpaid break minutes. The result shows both a clock duration and decimal hours, making it easy to copy into a time record.',
     [
@@ -193,7 +197,8 @@ export const tools: Tool[] = [
   definition(
     'timesheet',
     'Weekly timesheet',
-    1,
+    'work',
+    'work',
     'Total a weekly timesheet with daily breaks, overnight shifts, and CSV export.',
     'Fill in the days you worked and leave both times blank for a day off. Review daily totals and export a CSV with decimal hours for your own records.',
     Array.from({ length: 7 }, (_, i) => [
@@ -214,7 +219,8 @@ export const tools: Tool[] = [
   definition(
     'decimal-hours',
     'Decimal hours converter',
-    1,
+    'work',
+    'work',
     'Convert hours and minutes to decimal hours, or decimal hours back to clock time.',
     'Switch between a clock duration and the decimal form often used in time records. A quarter hour is 0.25 hours, not 0.15 hours.',
     [
@@ -233,7 +239,8 @@ export const tools: Tool[] = [
   definition(
     'time-units',
     'Time unit converter',
-    1,
+    'time-math',
+    'work',
     'Convert seconds, minutes, hours, fixed days, and weeks.',
     'Convert a quantity between common time units. This is useful for estimates, media lengths, and tasks where a day means exactly 24 hours.',
     [
@@ -250,7 +257,8 @@ export const tools: Tool[] = [
   definition(
     'start-finish',
     'Start / finish time calculator',
-    1,
+    'time-math',
+    'work',
     'Find a finish time from a duration, or work backwards to a starting time.',
     'Plan when to start a task or when it will finish. The day offset makes it clear when a calculation crosses midnight, including tasks longer than one day.',
     [
@@ -270,7 +278,8 @@ export const tools: Tool[] = [
   definition(
     'date-difference',
     'Date difference calculator',
-    2,
+    'dates',
+    'calendar',
     'Find the number of calendar days, months, and years between two dates.',
     'Compare dates for a project, trip, or milestone. The main result gives signed calendar days; the second line describes the same interval in calendar years, months, and days.',
     [
@@ -286,7 +295,8 @@ export const tools: Tool[] = [
   definition(
     'add-dates',
     'Add or subtract dates',
-    2,
+    'dates',
+    'calendar',
     'Move a calendar date forward or back by days, months, and years.',
     'Find a date after a project interval or work backwards from a milestone. Calendar months keep the day number when possible and use the last valid day when necessary.',
     [
@@ -308,7 +318,8 @@ export const tools: Tool[] = [
   definition(
     'business-days',
     'Business days calculator',
-    2,
+    'dates',
+    'calendar',
     'Count working days using your own working week and excluded dates.',
     'Choose the weekdays that count as working days, then enter any holidays or other excluded dates. The tool works for a standard Monday–Friday week or a custom schedule.',
     [
@@ -342,7 +353,8 @@ export const tools: Tool[] = [
   definition(
     'weekday',
     'Weekday finder',
-    2,
+    'dates',
+    'calendar',
     'Find which day of the week a date falls on, with its day of the year.',
     'Check the weekday of a birthday, appointment, or historical date. The result also shows its position within the year so you can check a schedule quickly.',
     [field('date', 'Date', '2026-09-29', 'date')],
@@ -355,7 +367,8 @@ export const tools: Tool[] = [
   definition(
     'iso-week',
     'ISO week number',
-    2,
+    'dates',
+    'calendar',
     'Find the ISO week number, week year, and weekday for a date.',
     'Look up the ISO week used in production schedules and weekly planning. The ISO week year can differ from the calendar year around New Year.',
     [field('date', 'Date', '2021-01-01', 'date')],
@@ -368,7 +381,8 @@ export const tools: Tool[] = [
   definition(
     'time-zone',
     'Time zone converter',
-    2,
+    'time-zones',
+    'calendar',
     'Convert a dated clock time between cities, including daylight-saving changes.',
     'Choose a date, clock time, source zone, and destination zone. Using the date makes seasonal offsets explicit. Search by city or pick a fixed abbreviation such as PST.',
     [
@@ -387,7 +401,8 @@ export const tools: Tool[] = [
   definition(
     'meeting-planner',
     'Meeting time overlap planner',
-    2,
+    'time-zones',
+    'calendar',
     'Find half-hour meeting slots within working hours across two to four time zones.',
     'Compare the local working day in up to four cities. Pick the planning date in the first zone and a common range of local working hours. Each result is a full 30-minute slot available everywhere.',
     [
@@ -408,7 +423,8 @@ export const tools: Tool[] = [
   definition(
     'playback-speed',
     'Playback speed calculator',
-    3,
+    'rates-media',
+    'rates',
     'Find how long a video, podcast, or audiobook takes at a different playback speed.',
     'Enter the original media length and the playback multiplier. The result is the time you will spend listening or watching, assuming continuous playback without pauses.',
     [
@@ -424,7 +440,8 @@ export const tools: Tool[] = [
   definition(
     'speech-duration',
     'Speech duration estimate',
-    3,
+    'rates-media',
+    'rates',
     'Estimate speaking time from a word count and an adjustable delivery rate.',
     'Enter your script word count, expected words per minute, and extra time for pauses. Adjust the speaking rate to match your delivery and confirm with a rehearsal.',
     [
@@ -441,7 +458,8 @@ export const tools: Tool[] = [
   definition(
     'running-pace',
     'Running pace calculator',
-    3,
+    'rates-media',
+    'rates',
     'Calculate average running pace per kilometre or mile and average speed.',
     'Enter your distance and finishing time to find an average pace. Select kilometres or miles so the result uses the same unit as your run.',
     [
@@ -461,7 +479,8 @@ export const tools: Tool[] = [
   definition(
     'render-time',
     'Render time estimate',
-    3,
+    'rates-media',
+    'rates',
     'Estimate a frame render duration with parallel workers and adjustable overhead.',
     'Use a representative per-frame render time to estimate completion. Enter equally capable workers and an overhead allowance for scheduling, transfers, or other work.',
     [
@@ -479,7 +498,8 @@ export const tools: Tool[] = [
   definition(
     'frames-duration',
     'Frames to duration',
-    3,
+    'rates-media',
+    'rates',
     'Convert a frame count to elapsed time at an explicit frame rate.',
     'Find the running length of an animation, clip, or sequence. Enter the actual frames-per-second value rather than a timecode label. Fractional frame rates are supported.',
     [

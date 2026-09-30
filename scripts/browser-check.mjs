@@ -44,7 +44,148 @@ async function noOverflow(page) {
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
-    `Horizontal overflow at ${page.url()}`,
+    `Horizontal overflow at ${page.url()} (${JSON.stringify(page.viewportSize())})`,
+  );
+}
+async function wayfinding(page, context, name) {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${origin}/time-zone/`);
+  await ready(page);
+  const navigation = page.getByRole('navigation', {
+    name: 'Time tools',
+    exact: true,
+  });
+  assert.equal(
+    await navigation.locator('a[aria-current="page"]').innerText(),
+    'Time zone converter',
+  );
+  assert.equal(
+    await navigation.locator('details[open] summary').innerText(),
+    'Time zones\n2',
+  );
+  await page.goto(`${origin}/tools/`);
+  await hydrated(page);
+  assert.equal(await page.locator('.directory-family').count(), 6);
+  for (const [family, count] of [
+    ['Timers', 4],
+    ['Time math', 5],
+    ['Work', 3],
+    ['Dates', 5],
+    ['Time zones', 2],
+    ['Rates & media', 5],
+  ]) {
+    await page.getByRole('button', { name: family, exact: true }).click();
+    assert.equal(
+      await page.locator('.tool-tile').count(),
+      count,
+      `${name} ${family}`,
+    );
+  }
+  await page.getByRole('button', { name: 'All', exact: true }).click();
+  await page.getByLabel('Theme', { exact: true }).selectOption('dark');
+  await page.reload();
+  await hydrated(page);
+  assert.equal(
+    await page.getByLabel('Theme', { exact: true }).inputValue(),
+    'dark',
+  );
+  assert.equal(
+    await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
+    'rgb(17, 20, 22)',
+  );
+  for (const route of ['tools/', '', 'timesheet/']) {
+    await page.goto(`${origin}/${route}`);
+    await ready(page);
+    const audit = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+    assert.deepEqual(
+      audit.violations.map((violation) => violation.id),
+      [],
+      `${name} dark ${route} accessibility`,
+    );
+  }
+  await page.getByLabel('Theme', { exact: true }).selectOption('light');
+  await page.goto(`${origin}/time-calculator/`);
+  await ready(page);
+  assert.equal(
+    await page.getByLabel('Theme', { exact: true }).inputValue(),
+    'light',
+  );
+  assert.equal(
+    await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
+    'rgb(244, 243, 234)',
+  );
+  await page.screenshot({
+    path: `output/playwright/${name}-calculator.png`,
+    fullPage: true,
+  });
+  await page.goto(`${origin}/timesheet/`);
+  await ready(page);
+  await page.screenshot({
+    path: `output/playwright/${name}-timesheet.png`,
+    fullPage: true,
+  });
+  await page.goto(`${origin}/tools/`);
+  await hydrated(page);
+  await page.screenshot({
+    path: `output/playwright/${name}-directory.png`,
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(origin);
+  await ready(page);
+  const start = await page
+    .getByRole('button', { name: 'Start timer', exact: true })
+    .boundingBox();
+  assert(
+    start && start.y >= 0 && start.y + start.height <= 844,
+    `${name} Start is on the first mobile screen`,
+  );
+  const menu = page.getByRole('button', { name: 'Tools 24', exact: true });
+  await menu.focus();
+  await menu.press('Enter');
+  assert.equal(await menu.getAttribute('aria-expanded'), 'true');
+  assert.equal(await navigation.isVisible(), true);
+  await menu.press('Escape');
+  assert.equal(await menu.getAttribute('aria-expanded'), 'false');
+  assert.equal(
+    await menu.evaluate((element) => element === document.activeElement),
+    true,
+  );
+  assert.equal(await navigation.isVisible(), false);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.getByLabel('Minutes', { exact: true }).fill('2');
+  await page.getByRole('button', { name: 'Start timer', exact: true }).click();
+  await page.waitForSelector('.timer-display');
+  const newPage = context.waitForEvent('page');
+  await page
+    .getByRole('link', { name: 'Open another tool in a new tab', exact: false })
+    .click();
+  const other = await newPage;
+  await hydrated(other);
+  assert.equal(await other.locator('.tool-tile').count(), 24);
+  await other.goto(origin);
+  await ready(other);
+  assert.equal(
+    await other.locator('.timer-display').count(),
+    0,
+    `${name} a new tab never duplicates timing`,
+  );
+  assert.equal(
+    await page.locator('.timer-display').count(),
+    1,
+    `${name} original timer remains available`,
+  );
+  assert.equal(
+    await page.getByRole('button', { name: 'Pause', exact: true }).isVisible(),
+    true,
+  );
+  await other.close();
+  await page.getByRole('button', { name: 'Stop / edit', exact: true }).click();
+  await page.getByLabel('Theme', { exact: true }).selectOption('system');
+  console.log(
+    `${name}: six families, current-tool navigation, dark/light contrast, saved theme, first-screen Start, keyboard menu and isolated new timing tabs passed.`,
   );
 }
 async function run(name, engine) {
@@ -119,6 +260,20 @@ async function run(name, engine) {
     await page.reload();
     await hydrated(page);
     await page.getByLabel('Favourites only').check();
+    assert.equal(await page.locator('.tool-tile').count(), 1);
+    await page.getByLabel('Favourites only').uncheck();
+    await page
+      .getByRole('navigation', { name: 'Time tools', exact: true })
+      .getByRole('link', { name: 'Favourites', exact: true })
+      .click();
+    await page.waitForURL('**/tools/#favourites');
+    await hydrated(page);
+    await page.waitForFunction(
+      () =>
+        document.querySelector('.directory-controls input[type="checkbox"]')
+          ?.checked,
+    );
+    assert.equal(await page.getByLabel('Favourites only').isChecked(), true);
     assert.equal(await page.locator('.tool-tile').count(), 1);
     await page.goto(origin);
     await ready(page);
@@ -236,8 +391,11 @@ async function run(name, engine) {
     console.log(
       `${name}: timer recovery, deadlines, event labels, laps, intervals, fullscreen, directory, CSV passed.`,
     );
+    await wayfinding(page, context, name);
     for (const viewport of [
+      { width: 320, height: 740 },
       { width: 390, height: 844 },
+      { width: 683, height: 450 },
       { width: 768, height: 1024 },
     ]) {
       await page.setViewportSize(viewport);

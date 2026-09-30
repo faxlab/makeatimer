@@ -27,7 +27,7 @@ await promisify(execFile)(
 const { server, origin } = await staticServer('output/playwright/ads-dist');
 await mkdir('output/playwright', { recursive: true });
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 let scripts = 0;
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
@@ -57,6 +57,13 @@ try {
   await page.goto(`${origin}/work-hours/`);
   await ready();
   assert.equal(await page.locator('.ad-slot').count(), 3);
+  assert.equal(await page.locator('.ad-side').isVisible(), true);
+  assert((await page.locator('.tool-main').boundingBox()).width >= 800);
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
   assert.equal(scripts, 0);
   await consent(false);
   assert.equal(scripts, 0);
@@ -79,6 +86,9 @@ try {
     path: 'output/playwright/ads-desktop.png',
     fullPage: true,
   });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  assert.equal(await page.locator('.ad-side').isVisible(), false);
+  assert((await page.locator('.tool-main').boundingBox()).width >= 800);
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.locator('.ad-side').isVisible(), false);
   assert.equal(await page.locator('.ad-result').isVisible(), true);

@@ -316,6 +316,11 @@
       >{full ? 'Exit fullscreen' : 'Fullscreen'}</button
     >
   </div>
+  {#if status !== 'idle'}<p class="timing-browse">
+      <a href="/tools/" target="_blank" rel="noopener"
+        >Open another tool in a new tab <span aria-hidden="true">↗</span></a
+      >
+    </p>{/if}
   {#if restored}<button
       class="quiet"
       onclick={async () => {

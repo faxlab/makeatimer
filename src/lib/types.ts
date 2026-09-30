@@ -1,4 +1,7 @@
 export type Values = Record<string, string>;
+export type ToolFamilyId =
+  'timers' | 'time-math' | 'work' | 'dates' | 'time-zones' | 'rates-media';
+export type ToolEngine = 'work' | 'calendar' | 'rates' | null;
 export type Field = {
   key: string;
   label: string;
@@ -19,7 +22,8 @@ export type Result = {
 export type Tool = {
   id: string;
   name: string;
-  category: string;
+  family: ToolFamilyId;
+  engine: ToolEngine;
   description: string;
   intro: string;
   fields: Field[];

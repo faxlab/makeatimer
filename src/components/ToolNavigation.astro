@@ -1,0 +1,87 @@
+---
+import { families, familyStyle } from '../lib/families';
+import { tools, toolPath } from '../lib/tools';
+import type { ToolFamilyId } from '../lib/types';
+const { path, family } = Astro.props as { path: string; family?: ToolFamilyId };
+---
+
+<aside class="tool-navigation" aria-label="Tool navigation">
+  <button
+    class="tool-menu-toggle"
+    aria-expanded="false"
+    aria-controls="tool-nav-content"
+  >
+    <span>
+      Tools <span class="nav-count">24</span>
+    </span>
+    <span aria-hidden="true">⌄</span>
+  </button>
+  <nav id="tool-nav-content" aria-label="Time tools">
+    <a
+      class="nav-index"
+      href="/tools/"
+      aria-current={path === '/tools/' ? 'page' : undefined}
+    >
+      All tools <span class="nav-count">24</span>
+    </a>
+    <a class="nav-index" href="/tools/#favourites">
+      Favourites <span aria-hidden="true">☆</span>
+    </a>
+    <div class="nav-families">
+      {families.map((item) => (
+        <details
+          class="nav-family family-scope"
+          open={item.id === family}
+          style={familyStyle(item.id)}
+        >
+          <summary>
+            <span class="family-mark" aria-hidden="true"></span>
+            {item.name}
+            <span class="nav-count">
+              {tools.filter((tool) => tool.family === item.id).length}
+            </span>
+          </summary>
+          <ul>
+            {tools
+              .filter((tool) => tool.family === item.id)
+              .map((tool) => (
+                <li>
+                  <a
+                    href={toolPath(tool.id)}
+                    aria-current={
+                      path === toolPath(tool.id) ? 'page' : undefined
+                    }
+                  >
+                    {tool.name}
+                  </a>
+                </li>
+              ))}
+          </ul>
+        </details>
+      ))}
+    </div>
+  </nav>
+</aside>
+
+<script>
+  const navigation = document.querySelector<HTMLElement>('.tool-navigation');
+  const toggle =
+    navigation?.querySelector<HTMLButtonElement>('.tool-menu-toggle');
+  function closeMenu() {
+    navigation?.classList.remove('menu-open');
+    toggle?.setAttribute('aria-expanded', 'false');
+  }
+  toggle?.addEventListener('click', () => {
+    const open = navigation?.classList.toggle('menu-open') || false;
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+  navigation?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && navigation.classList.contains('menu-open')) {
+      closeMenu();
+      toggle?.focus();
+    }
+  });
+  window
+    .matchMedia('(min-width: 1100px)')
+    .addEventListener('change', closeMenu);
+</script>

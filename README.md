@@ -19,10 +19,14 @@ Open the local address printed by Astro. No credentials are required. Advertisin
 
 ## Tools
 
-- Timing: duration/deadline timer, event countdown, stopwatch with laps, work/rest intervals.
-- Duration and work: time arithmetic, duration totals, clock differences, work hours, weekly timesheet/CSV, decimal hours, unit conversion, start/finish time.
-- Calendar and zones: date differences, date offsets, custom business days, weekday, ISO week, time-zone conversion, meeting overlap.
-- Specialist: playback length, speech estimate, running pace, render estimate, frames to duration.
+- Timers: duration/deadline timer, event countdown, stopwatch with laps, work/rest intervals.
+- Time math: time arithmetic, duration totals, clock differences, unit conversion, start/finish time.
+- Work: work hours, weekly timesheet/CSV, decimal hours.
+- Dates: date differences, date offsets, custom business days, weekday, ISO week.
+- Time zones: time-zone conversion and meeting overlap.
+- Rates & media: playback length, speech estimate, running pace, render estimate, frames to duration.
+
+The interface uses consistent tool navigation, named colour groups, readable fields, and immediate results. See [design rules](docs/design.md) for layout, typography, theme, and interaction conventions.
 
 ## Verify
 
@@ -34,13 +38,15 @@ npm run ad-check
 npm run performance-check
 ```
 
-The browser check starts its own local static server and verifies the built output. It checks every calculator, share round trips, invalid inputs, timer recovery, intervals, laps, CSV, fullscreen, directory filtering, and mobile/tablet layouts. Screenshots stay in ignored `output/playwright/`. WebKit/device emulation is not a test on a physical iPad.
+The browser check starts its own local static server and verifies the built output. It checks every calculator, share round trips, invalid inputs, timer recovery, intervals, laps, CSV, fullscreen, directory filtering/favourites, tool navigation, saved themes, keyboard menus, first-screen mobile Start, and isolated new timing tabs. It includes 320px layouts and reflow at an equivalent 200% desktop zoom, plus automated light/dark accessibility checks. Screenshots stay in ignored `output/playwright/`. WebKit/device emulation is not a test on a physical iPad.
 
 ## Calculation rules
 
 Durations accept `H:MM` or `H:MM:SS`. Clock calculations use fixed durations; calendar calculations use the Gregorian calendar. Time-zone conversions reject nonexistent times and require an explicit earlier/later selection for repeated times. Fixed PST is separate from seasonal Los Angeles time.
 
 Browser alarms cannot guarantee execution while a tab is closed, frozen, discarded, or the device is asleep. Timers recover from timestamps when execution resumes. Session storage isolates timing state to a tab; local storage holds theme, sound preference, and favourites. Device clock changes affect elapsed timing.
+
+While timing is active or paused, internal navigation opens another tab to keep the timing tab available. The labelled "Open another tool in a new tab" link offers the same behaviour directly. A new tab starts with editable defaults; it does not duplicate or start the original timer.
 
 Share links use readable, versioned parameters in the fragment. They restore editable inputs without starting timing or requesting permissions. Deadline links preserve the absolute instant and display zone. Links are not confidential.
 

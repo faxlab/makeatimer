@@ -37,9 +37,9 @@
     restore();
     window.addEventListener('hashchange', restore);
     const module =
-      tool.category === 'Calendar & zones'
+      tool.engine === 'calendar'
         ? import('../lib/calendar')
-        : tool.category === 'Specialist'
+        : tool.engine === 'rates'
           ? import('../lib/rates')
           : import('../lib/work');
     module
@@ -72,57 +72,84 @@
 
 <section class="calculator-card" aria-label={`${tool.name} calculator`}>
   {#if warning}<p class="notice" role="status">{warning}</p>{/if}
-  <form onsubmit={(e) => e.preventDefault()}>
-    {#if tool.id === 'timesheet'}
-      <div class="timesheet">
-        {#each ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as day, i}
-          <fieldset>
-            <legend>{day}</legend>
-            <div class="timesheet-row">
-              {#each tool.fields.slice(i * 4, i * 4 + 4) as field}<InputField
-                  {field}
-                  bind:value={values[field.key]}
-                />{/each}
+  <div
+    class="calculator-workspace"
+    class:timesheet-workspace={tool.id === 'timesheet'}
+  >
+    <div class="input-panel">
+      <h2 class="panel-title">Inputs</h2>
+      <form onsubmit={(e) => e.preventDefault()}>
+        {#if tool.id === 'timesheet'}
+          <div class="timesheet">
+            <div class="timesheet-headings" aria-hidden="true">
+              <span>Day</span><span>Clock in</span><span>Clock out</span><span
+                >Break (min)</span
+              ><span>End day</span>
             </div>
-          </fieldset>
-        {/each}
-      </div>
-    {:else}
-      <div class="form-grid">
-        {#each tool.fields as field}<InputField
-            {field}
-            bind:value={values[field.key]}
-          />{/each}
-      </div>
-    {/if}
-  </form>
-  <div class="result-panel" aria-live="polite" aria-atomic="true">
-    <p class="eyebrow">Your result</p>
-    {#if output.error}<p class="error" role="alert">
-        {output.error}
-      </p>{:else if output.result}
-      <output class="result-value">{output.result.value}</output>
-      <p>{output.result.detail}</p>
-      {#if output.result.rows?.length}<div class="result-table">
-          <table>
-            <caption class="sr-only">Result details</caption><tbody
-              >{#each output.result.rows as [name, value]}<tr
-                  ><th scope="row">{name}</th><td>{value}</td></tr
-                >{/each}</tbody
+            {#each ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as day, i}
+              <div
+                class="timesheet-day"
+                role="group"
+                aria-labelledby={`day-${i}`}
+              >
+                <h3 id={`day-${i}`}>{day}</h3>
+                <div class="timesheet-row">
+                  {#each tool.fields.slice(i * 4, i * 4 + 4) as field}<InputField
+                      {field}
+                      bind:value={values[field.key]}
+                    />{/each}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <div class="form-grid">
+            {#each tool.fields as field}<InputField
+                {field}
+                bind:value={values[field.key]}
+              />{/each}
+          </div>
+        {/if}
+      </form>
+    </div>
+    <div class="result-column">
+      <div class="result-panel" aria-live="polite" aria-atomic="true">
+        <h2 class="panel-title">Result</h2>
+        {#if output.error}<p class="error" role="alert">
+            {output.error}
+          </p>{:else if output.result}
+          <output class="result-value">{output.result.value}</output>
+          <p>{output.result.detail}</p>
+          {#if output.result.rows?.length}
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll wide result tables.) -->
+            <div
+              class="result-table"
+              class:meeting-slots={tool.id === 'meeting-planner'}
+              role="region"
+              aria-label="Result details"
+              tabindex="0"
             >
-          </table>
-        </div>{/if}
-      {#if output.result.csv}<button class="secondary" onclick={exportCsv}
-          >Download CSV</button
-        >{/if}
-    {/if}
+              <table>
+                <caption class="sr-only">Result details</caption><tbody
+                  >{#each output.result.rows as [name, value]}<tr
+                      ><th scope="row">{name}</th><td>{value}</td></tr
+                    >{/each}</tbody
+                >
+              </table>
+            </div>{/if}
+          {#if output.result.csv}<button class="secondary" onclick={exportCsv}
+              >Download CSV</button
+            >{/if}
+        {/if}
+      </div>
+      <Actions
+        {values}
+        path={`/${tool.id}/`}
+        text={output.result
+          ? `${output.result.value}\n${output.result.detail}${output.result.rows ? `\n${output.result.rows.map((r: [string, string]) => r.join(': ')).join('\n')}` : ''}`
+          : ''}
+        disabled={!loaded || !output.result}
+      />
+    </div>
   </div>
-  <Actions
-    {values}
-    path={`/${tool.id}/`}
-    text={output.result
-      ? `${output.result.value}\n${output.result.detail}${output.result.rows ? `\n${output.result.rows.map((r: [string, string]) => r.join(': ')).join('\n')}` : ''}`
-      : ''}
-    disabled={!loaded || !output.result}
-  />
 </section>

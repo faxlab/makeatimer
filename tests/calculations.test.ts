@@ -37,13 +37,11 @@ test('catalogue contains exactly 24 unique tools and valid related links', () =>
   assert.equal(new Set(tools.map((t) => t.id)).size, 24);
   for (const tool of tools) for (const id of tool.related) assert(getTool(id));
 });
-for (const tool of tools.filter(
-  (t) => t.fields.length && t.category !== 'Timing',
-)) {
+for (const tool of tools.filter((t) => t.fields.length && t.engine !== null)) {
   const calculate =
-    tool.category === 'Calendar & zones'
+    tool.engine === 'calendar'
       ? calendar
-      : tool.category === 'Specialist'
+      : tool.engine === 'rates'
         ? rates
         : work;
   test(`${tool.id}: independent default reference and invalid input`, () => {

@@ -544,6 +544,11 @@
         }}>Enable sound for restored timer</button
       >{/if}
   {/if}
+  {#if timer}<p class="timing-browse">
+      <a href="/tools/" target="_blank" rel="noopener"
+        >Open another tool in a new tab <span aria-hidden="true">↗</span></a
+      >
+    </p>{/if}
   <div class="timer-settings">
     <div class="sound-setting">
       <label for="sound">Alarm sound</label><select

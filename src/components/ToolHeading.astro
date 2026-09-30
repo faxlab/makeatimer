@@ -1,0 +1,20 @@
+---
+import { getFamily } from '../lib/families';
+import type { ToolFamilyId } from '../lib/types';
+const { title, description, family } = Astro.props as {
+  title: string;
+  description: string;
+  family?: ToolFamilyId;
+};
+---
+
+<div class="tool-heading">
+  {family && (
+    <p class="family-label">
+      <span class="family-mark" aria-hidden="true"></span>
+      {getFamily(family).name}
+    </p>
+  )}
+  <h1>{title}</h1>
+  <p>{description}</p>
+</div>
