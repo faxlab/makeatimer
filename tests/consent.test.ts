@@ -189,6 +189,43 @@ test(
 );
 
 test(
+  'an initial unavailable API does not cancel a later message deadline',
+  { timeout: 1000 },
+  async () => {
+    const queue: Record<string, () => void>[] = [];
+    let listener: Callback = () => {};
+    let state: ConsentState | undefined;
+    let timedOut!: () => void;
+    let waiting = false;
+    const timeout = new Promise<void>((resolve) => {
+      timedOut = resolve;
+    });
+    googleConsentAdapter(
+      {
+        googlefc: { callbackQueue: queue },
+        __tcfapi: (_command, _version, callback) => {
+          listener = callback;
+          callback({ cmpId: 300, cmpStatus: 'loaded' }, true);
+        },
+      },
+      (next) => {
+        state = next;
+        if (waiting && next.phase === 'unavailable') timedOut();
+      },
+      5,
+    );
+    queue[0].CONSENT_API_READY();
+    assert.equal(state?.phase, 'unavailable');
+    waiting = true;
+    listener({ ...accepted, eventStatus: undefined, tcString: '' }, true);
+    assert.equal(state?.phase, 'pending');
+    await timeout;
+    assert.equal(state?.phase, 'unavailable');
+    assert.equal(state?.permitted, false);
+  },
+);
+
+test(
   'a failed preference reopen does not restore stale permission',
   { timeout: 1000 },
   async () => {

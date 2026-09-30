@@ -54,6 +54,7 @@ export function googleConsentAdapter(
   let subscribed = false;
   let reopening = false;
   let canReopen = false;
+  let uiShown = false;
   let deadline: ReturnType<typeof setTimeout> | undefined;
   const stopWaiting = () => {
     clearTimeout(deadline);
@@ -62,6 +63,7 @@ export function googleConsentAdapter(
   const unavailable = () => {
     stopWaiting();
     canReopen = false;
+    uiShown = false;
     update({ phase: 'unavailable', permitted: false, canReopen: false });
   };
   const waitForMessage = () => {
@@ -79,20 +81,25 @@ export function googleConsentAdapter(
         host.__tcfapi('addEventListener', 2, (data, success) => {
           const state = consentState(data, success);
           canReopen = state.canReopen;
-          if (
+          const next =
             reopening &&
             state.phase !== 'unavailable' &&
             data?.eventStatus !== 'useractioncomplete'
-          ) {
+              ? { ...state, phase: 'pending' as const, permitted: false }
+              : state;
+          if (next.phase !== 'pending') {
+            stopWaiting();
+            uiShown = false;
+            if (next.phase === 'resolved') reopening = false;
+          } else if (data?.eventStatus === 'cmpuishown') {
             // A displayed CMP owns the user's decision time; never time out while they read it.
-            if (data?.eventStatus === 'cmpuishown') stopWaiting();
-            update({ ...state, phase: 'pending', permitted: false });
-          } else {
-            if (state.phase !== 'pending' || data?.eventStatus === 'cmpuishown')
-              stopWaiting();
-            if (state.phase !== 'pending') reopening = false;
-            update(state);
+            uiShown = true;
+            stopWaiting();
+          } else if (!uiShown && deadline === undefined) {
+            // Google can report an unavailable initial state before becoming pending.
+            waitForMessage();
           }
+          update(next);
         });
       } catch {
         unavailable();
@@ -104,6 +111,7 @@ export function googleConsentAdapter(
     open() {
       if (!canReopen) return;
       reopening = true;
+      uiShown = false;
       update({ phase: 'pending', permitted: false, canReopen: true });
       waitForMessage();
       fc.callbackQueue!.push({

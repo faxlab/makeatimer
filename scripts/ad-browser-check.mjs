@@ -224,6 +224,7 @@ try {
       }, true);
       window.__tcfapi = (command, version, callback) => {
         listener = callback;
+        callback({ cmpId: 300, cmpStatus: 'loaded' }, true);
         callback({ cmpId: 300, cmpStatus: 'loaded', gdprApplies: true, eventStatus: 'tcloaded', tcString: '' }, true);
       };
       window.googlefc.showRevocationMessage = () => {};
