@@ -108,30 +108,13 @@ export function loadGoogleConsent(
 ) {
   const host = window as unknown as ConsentHost;
   const adapter = googleConsentAdapter(host, update);
-  const fc = host.googlefc! as NonNullable<ConsentHost['googlefc']> & {
-    controlledMessagingFunction?: (message: {
-      proceed: (show: boolean) => void;
-    }) => void;
-  };
-  // Let shared/restored timers hydrate before deciding whether to show a message.
-  fc.controlledMessagingFunction = (message) => {
-    const proceed = () =>
-      message.proceed(
-        !document.body.classList.contains('timing-active') &&
-          !document.body.classList.contains('tool-error'),
-      );
-    const island = document.querySelector('astro-island');
-    if (island?.hasAttribute('ssr'))
-      island.addEventListener('astro:hydrate', proceed, { once: true });
-    else proceed();
-  };
   // AdSense deploys its published European message through its base tag.
   // Auto ads must stay off; manual units are pushed only by the consent-gated controller.
-  if (!document.querySelector('script[data-makeatimer-adsense]')) {
+  if (!document.querySelector('#makeatimer-google-tag')) {
     const script = document.createElement('script');
     script.async = true;
     script.crossOrigin = 'anonymous';
-    script.dataset.makeatimerAdsense = '';
+    script.id = 'makeatimer-google-tag';
     script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`;
     script.onerror = adapter.fail;
     document.head.append(script);
