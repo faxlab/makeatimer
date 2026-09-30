@@ -18,6 +18,8 @@ Submit `https://makeatimer.com/sitemap.xml` after verifying domain ownership in 
 
 Advertising is off until explicitly enabled. An approved publisher/site and an installed Google-certified consent management platform (CMP) are required. Never enable the flags merely to show empty ad boxes.
 
+For AdSense ownership verification before approval, set `PUBLIC_ADS_CLIENT` to the existing publisher's actual `ca-pub-…` identifier and use an explicit production build. The root `ads.txt` then publishes the authorized seller record even while advertising stays disabled. Select the ads.txt verification method in AdSense, verify the live file, and request site review. Preview builds and builds without a valid publisher ID keep the disabled placeholder. Publishing this seller record does not load advertising scripts or enable ad placements.
+
 Configure `PUBLIC_ADS_CLIENT` with the actual `ca-pub-…` identifier and the three manual slot IDs (`PUBLIC_ADS_SIDE_SLOT`, `PUBLIC_ADS_RESULT_SLOT`, `PUBLIC_ADS_CONTENT_SLOT`). Install the CMP's real loader/configuration according to its documentation and Google account settings. Have its adapter dispatch:
 
 ```js
@@ -30,7 +32,7 @@ window.dispatchEvent(
 
 Dispatch `permitted: false` on refusal or revocation. Resolve the initial persisted consent state after the page handler is registered. Listen for `makeatimer:open-consent` to open the CMP preference manager from the footer. The adapter must honor the CMP/Google advertising mode; this site does not interpret raw TCF strings or supply a homemade consent banner.
 
-Set `PUBLIC_CMP_READY=true` only after testing this real integration. Then set `PUBLIC_ADS_ENABLED=true`. The generated `ads.txt` uses the configured publisher ID. The privacy page describes advertising only in enabled builds.
+Set `PUBLIC_CMP_READY=true` only after testing this real integration. Then set `PUBLIC_ADS_ENABLED=true`. The privacy page describes advertising only in enabled builds.
 
 Manual units have reserved space, load asynchronously after permission, and are filled at most once per page. Active, paused, and fullscreen timing views hide all placements. Ad refusal/revocation clears placements and reloads a previously loaded ad page so the CMP can resolve the new state. Tools remain usable when scripts fail or are blocked. No automatic refresh, floating anchors, overlays, or vignettes are configured here; keep account-side automatic formats off too.
 
