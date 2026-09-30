@@ -6,14 +6,23 @@
     text,
     path,
     disabled = false,
+    live = false,
   } = $props<{
     values: Values;
     text: string;
     path: string;
     disabled?: boolean;
+    live?: boolean;
   }>();
   let status = $state('');
-  let shareUrl = $state('');
+  let showShare = $state(false);
+  let shareUrl = $derived(
+    showShare ? `${location.origin}${path}${encodeShare(values)}` : '',
+  );
+  $effect(() => {
+    shareUrl;
+    status = '';
+  });
   async function copy() {
     try {
       await copyText(text);
@@ -24,10 +33,12 @@
   }
   async function share() {
     const url = `${location.origin}${path}${encodeShare(values)}`;
-    shareUrl = url;
+    showShare = true;
     try {
       await copyText(url);
-      status = 'Share link copied. Opening it will not start a timer.';
+      status = live
+        ? 'Link copied. Opens as a live countdown; sound stays off.'
+        : 'Share link copied. Opening it will not start a timer.';
     } catch {
       status = 'Select and copy the share link below.';
     }

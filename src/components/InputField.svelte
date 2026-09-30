@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Field } from '../lib/types';
   import ZonePicker from './ZonePicker.svelte';
+  import { dragValue } from '../lib/drag-value';
   let {
     field,
     value = $bindable(''),
@@ -38,6 +39,7 @@
         aria-describedby={field.help ? `${id}-help` : undefined}></textarea>
     {:else}
       <input
+        use:dragValue={field.adjustment}
         {id}
         type={field.type || 'text'}
         {value}

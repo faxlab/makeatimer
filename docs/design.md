@@ -9,22 +9,22 @@ The wayfinding reference is Massimo Vignelli and Bob Noorda's 1970 New York City
 - Preserve the compact lowercase `makeatimer.` wordmark and green dot.
 - Use the existing system sans-serif stack without downloading fonts. Body text and inputs are 16px; supporting labels are at least 14px.
 - Use bold, left-aligned headings and tabular numerals for time values. Reserve large numerals for the clock and primary result.
-- Keep the header charcoal with warm white lettering. The workspace follows System by default, with explicit Light and Dark options saved locally.
+- Keep the header black with white lettering and neutral white/grey workspace surfaces. The workspace follows System by default, with explicit Light and Dark options saved locally.
 - Use neutral panels, borders, and action buttons. Colour marks families, selected destinations, and result edges. Error and focus states retain their own semantics.
 - Keep surfaces square and control corners subtle. Use an 8px spacing rhythm and avoid decorative shadows.
 
 ## Tool families
 
-Every coloured marker appears beside a readable family name. Current tool and filter states also have text, borders, and semantic attributes.
+Family markers use round, lettered discs and the subway colours published in the [MTA colour dataset](https://data.ny.gov/d/3uhz-sej2), verified September 30, 2026. Letter and label colours preserve contrast in each theme. Every marker appears beside a readable family name. Current tool and filter states also have text, borders, and semantic attributes.
 
-| Family        | Tools                                                             | Light accent | Dark accent |
-| ------------- | ----------------------------------------------------------------- | ------------ | ----------- |
-| Timers        | Timer, countdown, stopwatch, intervals                            | `#146C43`    | `#52B788`   |
-| Time math     | Arithmetic, duration sums, clock differences, units, start/finish | `#2457B2`    | `#6FA8FF`   |
-| Work          | Work hours, timesheet, decimal hours                              | `#825C00`    | `#F2BC57`   |
-| Dates         | Date difference, offsets, business days, weekday, ISO week        | `#6941A5`    | `#B69CFF`   |
-| Time zones    | Conversion, meeting overlap                                       | `#006B78`    | `#57C7D4`   |
-| Rates & media | Playback, speech, running pace, rendering, frames                 | `#A4441F`    | `#F28C63`   |
+| Family        | Disc | Colour    | Light text accent | Dark text accent |
+| ------------- | ---- | --------- | ----------------- | ---------------- |
+| Timers        | T    | `#009952` | `#00763E`         | `#22C976`        |
+| Time math     | M    | `#0062CF` | `#0053B0`         | `#78A9FF`        |
+| Work          | W    | `#F6BC26` | `#765400`         | `#F6BC26`        |
+| Dates         | D    | `#9A38A1` | `#9A38A1`         | `#DC68E3`        |
+| Time zones    | Z    | `#D82233` | `#C51F2E`         | `#FF6773`        |
+| Rates & media | R    | `#EB6800` | `#A54400`         | `#FF8930`        |
 
 `src/lib/families.ts` defines display names and accents. Each tool declares a typed `family` and a separate calculation `engine` in `src/lib/tools.ts`; regrouping navigation must preserve its calculation engine.
 
@@ -42,7 +42,11 @@ Every coloured marker appears beside a readable family name. Current tool and fi
 
 Use native buttons, fields, select elements, and expandable navigation. Controls have at least 44px touch targets and a visible focus ring. Select fields keep native keyboard behaviour with a consistent visual arrow.
 
+Numeric, duration, clock, and date fields support vertical mouse/pen dragging. Moving up increases the value; moving down decreases it. Shift refines the adjustment and Alt increases its step. Whole-number fields stay whole. Escape cancels a drag, bounds discard overshoot, and blank/invalid values remain available for typing. Duration text also supports Up/Down keys. Touch retains scrolling and native field editing; drag hints hide on coarse pointers. Respect reduced-motion preferences and keep fields stationary while values change.
+
 Timing stays scoped to its original page and tab. While active or paused, internal navigation opens a new tab; the timing screen also offers a labelled link for this action. Opening another tab never clones or starts a timer. Fullscreen focuses on the clock and timing controls.
+
+Timer/countdown addresses mirror their settings and current state. A copied running address contains an absolute finishing instant and opens immediately as a silent countdown. Setup duration links begin on opening; paused links retain remaining time; expired links show completion. A local draft survives refresh without starting itself. Shared opening never unlocks audio or requests wake lock. Calculator, stopwatch, and interval links remain editable presets. Copied links are snapshots rather than a synchronized remote session.
 
 ## Reserved advertising
 
@@ -52,4 +56,4 @@ Advertising is disabled by default. Enabling it requires the publisher and conse
 
 ## Verification
 
-`npm run browser-check` covers Chromium, Firefox, and WebKit, including family counts, current-tool navigation, favourites, theme persistence, keyboard menus, timer tab isolation, narrow layouts, and automated WCAG 2/2.1 AA checks. `npm run ad-check` exercises reserved placements and consent using stubbed ads. Review screenshots when changing layout; automated checks do not replace visual or physical-device review.
+`npm run browser-check` covers Chromium, Firefox, and WebKit, including value dragging, precision and cancellation, live/paused/expired countdown links, editable draft reloads, address updates with blocked storage, silent shared opening, family counts, current-tool navigation, favourites, theme persistence, keyboard menus, timer tab isolation, narrow layouts, and automated WCAG 2/2.1 AA checks. `npm run ad-check` exercises reserved placements and consent using stubbed ads. Review screenshots when changing layout; automated checks do not replace visual or physical-device review.

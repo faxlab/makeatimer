@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import { decodeShare } from '../lib/share';
+  import { decodeShare, encodeShare } from '../lib/share';
+  import { timerLinkValues, timerFromLink } from '../lib/timer-sharing';
   import {
     remainingTime,
     pauseTimer,
@@ -13,6 +14,7 @@
   import type { Sound } from '../lib/audio';
   import ZonePicker from './ZonePicker.svelte';
   import Actions from './Actions.svelte';
+  import { dragValue } from '../lib/drag-value';
   let { event = false } = $props<{ event?: boolean }>();
   const defaults = untrack(() => ({
     mode: event ? 'until' : 'duration',
@@ -25,6 +27,8 @@
     choice: 'reject',
     label: event ? 'My event' : '',
     instant: '',
+    state: 'setup',
+    remaining: '',
   }));
   const storageKey = untrack(() =>
     event ? 'makeatimer:event' : 'makeatimer:timer',
@@ -33,6 +37,7 @@
   let timer = $state<TimerState | null>(null);
   let now = $state(Date.now());
   let warning = $state('');
+  let invalidLink = $state(false);
   let error = $state('');
   let sound = $state<Sound>('bell');
   let awake = $state(false);
@@ -43,6 +48,8 @@
   let zoneModule = $state<typeof import('../lib/zones')>();
   let ready = $state(false);
   let restored = $state(false);
+  let sharedVisit = $state(false);
+  let alarmEnabled = $state(true);
   let remaining = $derived(timer ? remainingTime(timer, now) : 300000);
   let preview = $derived.by(() => {
     if (inputs.mode !== 'until' || !zoneModule)
@@ -81,16 +88,24 @@
       return { target: null, error: (e as Error).message };
     }
   });
-  let sharedValues = $derived({
-    ...inputs,
-    instant:
-      inputs.mode === 'duration'
-        ? ''
-        : timer?.kind === 'deadline'
-          ? new Date(timer.end).toISOString()
-          : inputs.mode === 'until' && preview.target
-            ? new Date(preview.target.epoch).toISOString()
-            : inputs.instant,
+  let sharedValues = $derived(
+    timerLinkValues(
+      inputs,
+      timer,
+      !timer && inputs.mode === 'until' ? preview.target?.epoch : undefined,
+    ),
+  );
+  $effect(() => {
+    if (!ready || invalidLink || error) return;
+    const fragment = encodeShare(sharedValues);
+    if (location.hash !== fragment) {
+      history.replaceState(
+        history.state,
+        '',
+        location.pathname + location.search + fragment,
+      );
+      persist();
+    }
   });
   $effect(() => {
     document.body.classList.toggle('timing-active', !!timer || full);
@@ -104,12 +119,17 @@
   });
   function persist() {
     try {
-      if (timer)
-        sessionStorage.setItem(
-          storageKey,
-          JSON.stringify({ timer, inputs, sound, awake, href: location.href }),
-        );
-      else sessionStorage.removeItem(storageKey);
+      sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          timer,
+          inputs,
+          sound,
+          awake,
+          sharedVisit,
+          href: location.href,
+        }),
+      );
     } catch {
       warning = 'Tab storage is unavailable; refresh recovery is disabled.';
     }
@@ -155,7 +175,7 @@
     now = Date.now();
     if (timer?.status === 'running' && remainingTime(timer, now) <= 0) {
       timer = { ...timer, status: 'finished', remaining: 0 };
-      playSound(sound);
+      if (alarmEnabled) playSound(sound);
       persist();
       setActive();
     }
@@ -175,21 +195,49 @@
   }
   onMount(() => {
     let alive = true;
-    let explicitShared = !!location.hash;
+    let explicitShared = !!location.hash && location.hash !== '#main';
+    let restoredDraft = false;
     const restoreLink = () => {
+      if (location.hash === '#main') return;
+      if (!zoneModule) {
+        explicitShared = !!location.hash;
+        return;
+      }
       const decoded = decodeShare(location.hash, defaults);
       inputs = { ...decoded.values } as typeof defaults;
       warning = decoded.warning;
+      invalidLink = !!decoded.warning;
       if (event) inputs.mode = 'until';
       else if (!['duration', 'until'].includes(inputs.mode)) {
         inputs = { ...defaults, zone: zoneModule?.localZone() || 'UTC' };
         warning =
           'This shared timer mode is not supported. Defaults were restored.';
+        invalidLink = true;
       }
       timer = null;
       restored = false;
       error = '';
       syncSharedInstant();
+      sharedVisit = false;
+      if (!warning && !error && zoneModule) {
+        try {
+          now = Date.now();
+          // Validate the zone independently of whether the link is a duration.
+          zoneModule.formatInstant(now, inputs.zone);
+          const deadline = inputs.instant
+            ? zoneModule.Temporal.Instant.from(inputs.instant).epochMilliseconds
+            : inputs.mode === 'until'
+              ? preview.target?.epoch
+              : undefined;
+          timer = timerFromLink(inputs, now, deadline);
+          sharedVisit = true;
+          restored = true;
+          alarmEnabled = false;
+          awake = false;
+        } catch (e) {
+          error = (e as Error).message;
+        }
+      }
       persist();
       setActive();
     };
@@ -212,7 +260,20 @@
             inputs = { ...defaults, ...data.inputs };
             awake = !!data.awake;
             restored = true;
+            sharedVisit = !!data.sharedVisit;
+            alarmEnabled = false;
             explicitShared = false;
+          } else if (
+            data.timer === null &&
+            reload &&
+            data.href === location.href
+          ) {
+            const draft = decodeShare(encodeShare(data.inputs), defaults);
+            if (!draft.warning) {
+              inputs = draft.values as typeof defaults;
+              explicitShared = false;
+              restoredDraft = true;
+            }
           }
         }
       }
@@ -224,7 +285,7 @@
         if (!alive) return;
         zoneModule = m;
         if (explicitShared) restoreLink();
-        else if (!timer) inputs.zone = m.localZone();
+        else if (!timer && !restoredDraft) inputs.zone = m.localZone();
         ready = true;
         tick();
         setActive();
@@ -261,7 +322,11 @@
   });
   async function start() {
     error = '';
+    warning = '';
+    invalidLink = false;
     restored = false;
+    sharedVisit = false;
+    alarmEnabled = true;
     try {
       void unlockAudio();
       now = Date.now();
@@ -327,6 +392,8 @@
     timer = null;
     inputs.instant = '';
     error = '';
+    sharedVisit = false;
+    restored = false;
     persist();
     setActive();
   }
@@ -344,7 +411,11 @@
   }
   const edited = () => {
     inputs.instant = '';
+    inputs.state = 'setup';
+    inputs.remaining = '';
     error = '';
+    warning = '';
+    invalidLink = false;
   };
 </script>
 
@@ -385,6 +456,12 @@
               class="field"
             >
               <label for={key}>{label}</label><input
+                use:dragValue={{
+                  kind: 'number',
+                  min: 0,
+                  max: key === 'hours' ? 8760 : 59,
+                  integer: true,
+                }}
                 id={key}
                 type="number"
                 min="0"
@@ -392,12 +469,16 @@
                 step="1"
                 value={inputs[key as 'hours' | 'minutes' | 'seconds']}
                 oninput={(e) => {
+                  edited();
                   inputs[key as 'hours' | 'minutes' | 'seconds'] =
                     e.currentTarget.value;
                 }}
               />
             </div>{/each}
         </div>
+        <p class="drag-hint">
+          Drag values up or down. Shift gives finer control.
+        </p>
         <div class="presets">
           <span class="sr-only">Quick durations</span
           >{#each [1, 5, 10, 15, 25, 60] as minutes}<button
@@ -405,6 +486,7 @@
               class:chosen={+inputs.hours * 60 + +inputs.minutes === minutes &&
                 +inputs.seconds === 0}
               onclick={() => {
+                edited();
                 inputs.hours = String(Math.floor(minutes / 60));
                 inputs.minutes = String(minutes % 60);
                 inputs.seconds = '0';
@@ -422,6 +504,7 @@
             </div>{/if}
           <div class="field">
             <label for="until-time">Finish at</label><input
+              use:dragValue={{ kind: 'time' }}
               id="until-time"
               type="time"
               step="1"
@@ -437,6 +520,7 @@
           />
           {#if event}<div class="field">
               <label for="event-date">Event date</label><input
+                use:dragValue={{ kind: 'date' }}
                 id="event-date"
                 type="date"
                 bind:value={inputs.date}
@@ -450,6 +534,7 @@
               >
               <div class="field">
                 <label for="until-date">Date in destination zone</label><input
+                  use:dragValue={{ kind: 'date' }}
                   id="until-date"
                   type="date"
                   bind:value={inputs.date}
@@ -495,6 +580,9 @@
         {event ? 'Start countdown' : 'Start timer'}</button
       >
     </form>
+    <p class="share-note">
+      The address updates as you edit. Copy it to share this timer.
+    </p>
   {:else}
     <p class="eyebrow">
       {inputs.label ||
@@ -532,17 +620,28 @@
       >
     </div>
     {#if timer.status === 'finished'}<p class="notice" role="status">
-        {restored
-          ? 'Your deadline passed while this page was unavailable. Sound may need to be enabled again.'
-          : 'Time is up.'}
+        {sharedVisit
+          ? 'This shared timer has finished.'
+          : restored
+            ? 'Your deadline passed while this page was unavailable. Sound may need to be enabled again.'
+            : 'Time is up.'}
       </p>{/if}
-    {#if restored && timer.status === 'running'}<button
+    {#if !alarmEnabled && timer.status === 'running'}<button
         class="quiet"
         onclick={async () => {
           await unlockAudio();
           restored = false;
-        }}>Enable sound for restored timer</button
+          alarmEnabled = true;
+        }}
+        >{sharedVisit
+          ? 'Enable sound for this countdown'
+          : 'Enable sound for restored timer'}</button
       >{/if}
+    {#if sharedVisit && !alarmEnabled && timer.status === 'running'}<p
+        class="share-note"
+      >
+        Live shared countdown. Sound stays off until you enable it.
+      </p>{/if}
   {/if}
   {#if timer}<p class="timing-browse">
       <a href="/tools/" target="_blank" rel="noopener"
@@ -564,6 +663,8 @@
         class="quiet"
         onclick={async () => {
           await unlockAudio();
+          alarmEnabled = true;
+          restored = false;
           playSound(sound);
         }}>Test sound</button
       >
@@ -585,6 +686,7 @@
     sleeps, or suspends the page.
   </p>
   <Actions
+    live
     values={sharedValues}
     path={event ? '/countdown/' : '/'}
     text={timer

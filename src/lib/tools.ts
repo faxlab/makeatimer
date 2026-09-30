@@ -5,7 +5,38 @@ const field = (
   value: string,
   type: Field['type'] = 'text',
   help?: string,
-): Field => ({ key, label, default: value, type, help });
+): Field => ({
+  key,
+  label,
+  default: value,
+  type,
+  help,
+  adjustment:
+    type === 'number'
+      ? { kind: 'number' }
+      : type === 'time'
+        ? { kind: 'time' }
+        : type === 'date'
+          ? { kind: 'date' }
+          : /^[-+]?\d+:\d{2}/.test(value)
+            ? { kind: 'auto' }
+            : undefined,
+});
+const numeric = (
+  key: string,
+  label: string,
+  value: string,
+  min?: number,
+  max = 1e12,
+  step = 1,
+  integer = false,
+): Field => ({
+  ...field(key, label, value, 'number'),
+  min: min === undefined ? undefined : String(min),
+  max: String(max),
+  step: String(step),
+  adjustment: { kind: 'number', min, max, step, integer },
+});
 const select = (
   key: string,
   label: string,
@@ -103,9 +134,9 @@ export const tools: Tool[] = [
     'Repeat work and rest intervals for exercise, focus sessions, or practice.',
     'Set a work period, a rest period, and the number of rounds. The timer advances automatically, announces phase changes when sound is available, and finishes immediately after the final work period.',
     [
-      field('work', 'Work seconds', '30', 'number'),
-      field('rest', 'Rest seconds', '10', 'number'),
-      field('rounds', 'Rounds', '8', 'number'),
+      numeric('work', 'Work seconds', '30', 1, 86400, 1, true),
+      numeric('rest', 'Rest seconds', '10', 0, 86400, 1, true),
+      numeric('rounds', 'Rounds', '8', 1, 1000, 1, true),
     ],
     'Eight rounds of 30 seconds work and 10 seconds rest take 5 minutes 10 seconds. There is no rest period after the last round.',
     'Pause stops elapsed session time. A delayed browser catches up to the current phase without replaying every missed alarm.',
@@ -186,7 +217,7 @@ export const tools: Tool[] = [
       field('start', 'Clock in', '09:00', 'time'),
       field('end', 'Clock out', '17:30', 'time'),
       nextDay,
-      field('breaks', 'Unpaid break minutes', '30', 'number'),
+      numeric('breaks', 'Unpaid break minutes', '30', 0),
     ],
     '09:00–17:30 with a 30-minute break gives 8:00:00, or 8 decimal hours.',
     'Breaks cannot exceed the shift. This tool measures hours and does not apply overtime, tax, or payroll rules.',
@@ -204,7 +235,7 @@ export const tools: Tool[] = [
     Array.from({ length: 7 }, (_, i) => [
       field(`start${i}`, 'Start', i < 5 ? '09:00' : '', 'time'),
       field(`end${i}`, 'End', i < 5 ? '17:00' : '', 'time'),
-      field(`break${i}`, 'Break minutes', '30', 'number'),
+      numeric(`break${i}`, 'Break minutes', '30', 0),
       select(`overnight${i}`, 'End day', 'no', [
         ['no', 'Same day'],
         ['yes', 'Next day'],
@@ -244,7 +275,7 @@ export const tools: Tool[] = [
     'Convert seconds, minutes, hours, fixed days, and weeks.',
     'Convert a quantity between common time units. This is useful for estimates, media lengths, and tasks where a day means exactly 24 hours.',
     [
-      field('amount', 'Amount', '90', 'number'),
+      numeric('amount', 'Amount', '90'),
       select('from', 'From', 'minutes', units),
       select('to', 'To', 'hours', units),
     ],
@@ -305,9 +336,9 @@ export const tools: Tool[] = [
         ['add', 'Add'],
         ['subtract', 'Subtract'],
       ]),
-      field('years', 'Years', '0', 'number'),
-      field('months', 'Months', '1', 'number'),
-      field('days', 'Days', '0', 'number'),
+      numeric('years', 'Years', '0', undefined, 10000, 1, true),
+      numeric('months', 'Months', '1', undefined, 120000, 1, true),
+      numeric('days', 'Days', '0', undefined, 3660000, 1, true),
     ],
     'January 31, 2026 plus one month becomes February 28, 2026. January 31, 2024 plus one month becomes February 29.',
     'Years and months are applied together, then days. Month-end clamping is explicit; adding and subtracting a month may not return the original date.',
@@ -411,8 +442,8 @@ export const tools: Tool[] = [
       field('zone2', 'Second time zone', 'America/New_York', 'zone'),
       field('zone3', 'Third time zone (optional)', '', 'zone'),
       field('zone4', 'Fourth time zone (optional)', '', 'zone'),
-      field('start', 'Local work begins (hour)', '9', 'number'),
-      field('end', 'Local work ends (hour)', '17', 'number'),
+      numeric('start', 'Local work begins (hour)', '9', 0, 23, 1, true),
+      numeric('end', 'Local work ends (hour)', '17', 1, 24, 1, true),
     ],
     'London and New York, 09:00–17:00 on January 15, 2026: shared availability is 14:00–17:00 London, or 09:00–12:00 New York.',
     'Slots step in 30-minute elapsed increments, with local dates shown for every zone. Working hours apply daily; weekends and holidays are not filtered.',
@@ -429,7 +460,7 @@ export const tools: Tool[] = [
     'Enter the original media length and the playback multiplier. The result is the time you will spend listening or watching, assuming continuous playback without pauses.',
     [
       field('duration', 'Original duration', '1:00:00'),
-      field('speed', 'Playback multiplier', '1.5', 'number'),
+      numeric('speed', 'Playback multiplier', '1.5', 0.01, 100, 0.1),
     ],
     'A one-hour recording at 1.5× speed takes 40 minutes. At 0.75× speed, it takes 1 hour 20 minutes.',
     'Duration is divided by speed. Seeking, ads, and pauses are not included.',
@@ -445,9 +476,9 @@ export const tools: Tool[] = [
     'Estimate speaking time from a word count and an adjustable delivery rate.',
     'Enter your script word count, expected words per minute, and extra time for pauses. Adjust the speaking rate to match your delivery and confirm with a rehearsal.',
     [
-      field('words', 'Word count', '600', 'number'),
-      field('wpm', 'Words per minute', '130', 'number'),
-      field('pause', 'Extra pauses (seconds)', '30', 'number'),
+      numeric('words', 'Word count', '600', 0),
+      numeric('wpm', 'Words per minute', '130', 1, 1000),
+      numeric('pause', 'Extra pauses (seconds)', '30', 0),
     ],
     '600 words at 120 words/minute take 5 minutes. With 30 seconds of extra pauses, allow 5:30.',
     'Speaking rate is an assumption, not a prediction. Audience response, pronunciation, and slide transitions can change the real duration.',
@@ -463,7 +494,7 @@ export const tools: Tool[] = [
     'Calculate average running pace per kilometre or mile and average speed.',
     'Enter your distance and finishing time to find an average pace. Select kilometres or miles so the result uses the same unit as your run.',
     [
-      field('distance', 'Distance', '5', 'number'),
+      numeric('distance', 'Distance', '5', 0.001, 1e12, 0.1),
       select('unit', 'Distance unit', 'km', [
         ['km', 'Kilometres'],
         ['mi', 'Miles'],
@@ -484,10 +515,10 @@ export const tools: Tool[] = [
     'Estimate a frame render duration with parallel workers and adjustable overhead.',
     'Use a representative per-frame render time to estimate completion. Enter equally capable workers and an overhead allowance for scheduling, transfers, or other work.',
     [
-      field('frames', 'Frame count', '240', 'number'),
-      field('seconds', 'Seconds per frame', '30', 'number'),
-      field('workers', 'Parallel workers', '4', 'number'),
-      field('overhead', 'Overhead percent', '10', 'number'),
+      numeric('frames', 'Frame count', '240', 1, 1e9, 1, true),
+      numeric('seconds', 'Seconds per frame', '30', 0.001, 1e12, 0.1),
+      numeric('workers', 'Parallel workers', '4', 1, 10000, 1, true),
+      numeric('overhead', 'Overhead percent', '10', 0, 1000),
     ],
     '240 frames at 30 seconds each on 4 equal workers take 30 minutes ideally, or 33 minutes with 10% overhead.',
     'Whole frame batches are rounded up. Actual speed depends on frame complexity, hardware, memory, and distribution; this is not a cost quote.',
@@ -503,8 +534,8 @@ export const tools: Tool[] = [
     'Convert a frame count to elapsed time at an explicit frame rate.',
     'Find the running length of an animation, clip, or sequence. Enter the actual frames-per-second value rather than a timecode label. Fractional frame rates are supported.',
     [
-      field('frames', 'Frame count', '2400', 'number'),
-      field('fps', 'Frames per second', '24', 'number'),
+      numeric('frames', 'Frame count', '2400', 0, 1e12, 1, true),
+      numeric('fps', 'Frames per second', '24', 0.001, 100000, 0.1),
     ],
     '2,400 frames at 24 fps last 100 seconds, or 1:40. At 30 fps they last 80 seconds.',
     'This converts elapsed frames to seconds. It does not generate SMPTE timecode or implement drop-frame numbering.',

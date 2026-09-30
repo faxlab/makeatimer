@@ -52,9 +52,9 @@ const { tool } = Astro.props;
     <h2>What the result means</h2>
     <p>{tool.convention}</p>
     <p>
-      Use Copy result to copy the displayed answer. Share link preserves the
-      inputs so someone else can open and edit the calculation. Opening a link
-      never starts a timer or asks for permissions.
+      {tool.id === 'countdown'
+        ? 'Copy the address bar to share this countdown. A shared link opens immediately at the same finishing time, with sound off until enabled.'
+        : 'Use Copy result to copy the displayed answer. Share link preserves the inputs so someone else can open and edit the calculation. This link does not start timing or request permissions.'}
     </p>
     <p>
       <a href="/conventions/">Read the calculation conventions →</a>

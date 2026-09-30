@@ -48,7 +48,11 @@ Browser alarms cannot guarantee execution while a tab is closed, frozen, discard
 
 While timing is active or paused, internal navigation opens another tab to keep the timing tab available. The labelled "Open another tool in a new tab" link offers the same behaviour directly. A new tab starts with editable defaults; it does not duplicate or start the original timer.
 
-Share links use readable, versioned parameters in the fragment. They restore editable inputs without starting timing or requesting permissions. Deadline links preserve the absolute instant and display zone. Links are not confidential.
+Timer settings update the address bar as you edit. Copy it directly to share: running links open as a live countdown to the same absolute finishing time; unstarted durations begin on opening; paused links preserve remaining time. Shared countdowns stay silent until the visitor enables sound and do not request screen-awake mode. Reloading your own draft keeps it editable. Links capture state when copied; later edits or pauses do not update earlier links.
+
+Calculator, stopwatch, and interval links retain editable settings. Links use readable, versioned fragment parameters and are not confidential.
+
+Value fields support vertical mouse/pen dragging. Shift gives finer control, Alt gives larger steps, and Escape restores the value before the drag. Normal typing, native keyboard/picker controls, and touch scrolling remain available.
 
 ## Build and deploy
 

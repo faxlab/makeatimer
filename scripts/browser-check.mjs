@@ -91,7 +91,7 @@ async function wayfinding(page, context, name) {
   );
   assert.equal(
     await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
-    'rgb(17, 20, 22)',
+    'rgb(16, 16, 16)',
   );
   for (const route of ['tools/', '', 'timesheet/']) {
     await page.goto(`${origin}/${route}`);
@@ -114,7 +114,7 @@ async function wayfinding(page, context, name) {
   );
   assert.equal(
     await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
-    'rgb(244, 243, 234)',
+    'rgb(243, 243, 243)',
   );
   await page.screenshot({
     path: `output/playwright/${name}-calculator.png`,
@@ -188,6 +188,201 @@ async function wayfinding(page, context, name) {
     `${name}: six families, current-tool navigation, dark/light contrast, saved theme, first-screen Start, keyboard menu and isolated new timing tabs passed.`,
   );
 }
+async function refinements(page, context, name) {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  async function drag(locator, distance, modifier) {
+    const box = await locator.boundingBox();
+    assert(box);
+    const x = box.x + box.width * 0.4,
+      y = box.y + box.height / 2;
+    if (modifier) await page.keyboard.down(modifier);
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y - distance, { steps: 8 });
+    await page.mouse.up();
+    if (modifier) await page.keyboard.up(modifier);
+  }
+  await page.goto(`${origin}/time-calculator/`);
+  await ready(page);
+  const duration = page.getByLabel('First duration', { exact: true });
+  await drag(duration, 80);
+  assert.equal(await duration.inputValue(), '1:40:00');
+  assert.equal(await page.locator('.result-value').innerText(), '2:25:00');
+  const box = await duration.boundingBox();
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2 - 24);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  assert.equal(await duration.inputValue(), '1:40:00');
+  assert.equal(await page.locator('body.value-dragging').count(), 0);
+  await duration.press('ArrowUp');
+  assert.equal(await duration.inputValue(), '1:41:00');
+  await page.goto(`${origin}/playback-speed/`);
+  await ready(page);
+  await drag(page.getByLabel('Playback multiplier'), 80, 'Shift');
+  assert.equal(
+    await page.getByLabel('Playback multiplier').inputValue(),
+    '1.6',
+  );
+  assert.equal(await page.locator('.result-value').innerText(), '0:37:30');
+  await page.goto(`${origin}/time-between/`);
+  await ready(page);
+  await drag(page.getByLabel('Start time', { exact: true }), 16);
+  assert.match(
+    await page.getByLabel('Start time', { exact: true }).inputValue(),
+    /^09:02/,
+  );
+  await page.goto(origin);
+  await ready(page);
+  await page.getByLabel('Minutes', { exact: true }).fill('2');
+  await page.waitForFunction(
+    () => new URLSearchParams(location.hash.slice(1)).get('minutes') === '2',
+  );
+  const setupAddress = page.url();
+  await page.reload();
+  await ready(page);
+  assert.equal(
+    await page.locator('.timer-display').count(),
+    0,
+    `${name} setup reload stays editable`,
+  );
+  assert.equal(
+    await page.getByLabel('Minutes', { exact: true }).inputValue(),
+    '2',
+  );
+  await page.getByRole('button', { name: 'Start timer', exact: true }).click();
+  await page.waitForSelector('.timer-display');
+  await page.waitForFunction(
+    () =>
+      new URLSearchParams(location.hash.slice(1)).get('state') === 'running',
+  );
+  const address = page.url();
+  const instant = new URLSearchParams(new URL(address).hash.slice(1)).get(
+    'instant',
+  );
+  assert(instant);
+  const visitor = await context.newPage();
+  await visitor.addInitScript(() => {
+    window.__automaticAudio = 0;
+    window.__automaticWake = 0;
+    const Audio =
+      window.AudioContext || Reflect.get(window, 'webkitAudioContext');
+    if (Audio) {
+      const resume = Audio.prototype.resume;
+      Audio.prototype.resume = function (...args) {
+        window.__automaticAudio++;
+        return resume.apply(this, args);
+      };
+    }
+    if (navigator.wakeLock) {
+      const request = navigator.wakeLock.request.bind(navigator.wakeLock);
+      navigator.wakeLock.request = (...args) => {
+        window.__automaticWake++;
+        return request(...args);
+      };
+    }
+  });
+  await visitor.goto(address);
+  await ready(visitor);
+  await visitor.waitForSelector('.timer-display');
+  assert.equal(
+    await visitor
+      .getByRole('button', { name: 'Start timer', exact: true })
+      .count(),
+    0,
+  );
+  assert.equal(
+    new URLSearchParams(new URL(visitor.url()).hash.slice(1)).get('instant'),
+    instant,
+  );
+  assert.deepEqual(
+    await visitor.evaluate(() => [
+      window.__automaticAudio,
+      window.__automaticWake,
+    ]),
+    [0, 0],
+  );
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.waitForFunction(
+    () => new URLSearchParams(location.hash.slice(1)).get('state') === 'paused',
+  );
+  await visitor.goto(page.url());
+  await ready(visitor);
+  assert.equal(
+    await visitor
+      .getByRole('button', { name: 'Resume', exact: true })
+      .isVisible(),
+    true,
+  );
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await page
+    .getByRole('link', { name: 'Skip to content', exact: true })
+    .focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('.timer-display').count(), 1);
+  assert.equal(
+    new URLSearchParams(new URL(page.url()).hash.slice(1)).get('state'),
+    'running',
+  );
+  const expired = new URL(address);
+  const params = new URLSearchParams(expired.hash.slice(1));
+  params.set('instant', '2026-01-01T00:00:00.000Z');
+  expired.hash = params.toString();
+  await visitor.goto(expired.href);
+  await ready(visitor);
+  await visitor.waitForSelector('.notice');
+  assert.equal(await visitor.locator('.timer-display').innerText(), '00:00');
+  assert.deepEqual(
+    await visitor.evaluate(() => [
+      window.__automaticAudio,
+      window.__automaticWake,
+    ]),
+    [0, 0],
+  );
+  await visitor.goto(setupAddress);
+  await ready(visitor);
+  await visitor.waitForSelector('.timer-display');
+  assert.equal(
+    await visitor
+      .getByRole('button', { name: 'Pause', exact: true })
+      .isVisible(),
+    true,
+  );
+  await visitor.close();
+  await page.getByRole('button', { name: 'Stop / edit', exact: true }).click();
+  const noStorage = await context.newPage();
+  await noStorage.addInitScript(() => {
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (...args) {
+      if (this === window.sessionStorage)
+        throw new DOMException('Storage blocked', 'SecurityError');
+      return setItem.apply(this, args);
+    };
+  });
+  await noStorage.goto(origin);
+  await ready(noStorage);
+  for (const minutes of ['3', '4']) {
+    await noStorage.getByLabel('Minutes', { exact: true }).fill(minutes);
+    await noStorage.waitForFunction(
+      (value) =>
+        new URLSearchParams(location.hash.slice(1)).get('minutes') === value,
+      minutes,
+    );
+  }
+  await noStorage
+    .getByRole('button', { name: 'Start timer', exact: true })
+    .click();
+  await noStorage.waitForFunction(
+    () =>
+      new URLSearchParams(location.hash.slice(1)).get('state') === 'running',
+  );
+  await noStorage.close();
+  console.log(
+    `${name}: drag adjustment, precision, Escape, keyboard, address-bar sharing (including blocked storage), live/paused/expired links, silent opening, and editable setup reload passed.`,
+  );
+}
+
 async function run(name, engine) {
   const browser = await engine.launch();
   const context = await browser.newContext({
@@ -329,19 +524,20 @@ async function run(name, engine) {
       .getByLabel('Share link', { exact: true })
       .inputValue();
     assert(deadlineUrl.includes('instant='));
-    await page.goto(deadlineUrl);
-    await ready(page);
-    assert.equal(await page.locator('.timer-display').count(), 0);
-    await page.getByRole('button', { name: 'Start timer' }).click();
-    await page.waitForSelector('.timer-display');
+    const deadlineViewer = await context.newPage();
+    await deadlineViewer.goto(deadlineUrl);
+    await ready(deadlineViewer);
+    await deadlineViewer.waitForSelector('.timer-display');
     assert.equal(
-      await page.getByRole('button', { name: 'Pause', exact: true }).count(),
+      await deadlineViewer
+        .getByRole('button', { name: 'Pause', exact: true })
+        .count(),
       0,
     );
-    await page.reload();
-    await hydrated(page);
-    assert.equal(await page.locator('.timer-display').count(), 1);
-    await page.getByRole('button', { name: 'Stop / edit' }).click();
+    await deadlineViewer.reload();
+    await ready(deadlineViewer);
+    assert.equal(await deadlineViewer.locator('.timer-display').count(), 1);
+    await deadlineViewer.close();
     await page.goto(`${origin}/countdown/`);
     await hydrated(page);
     await page.getByLabel('Event name').fill('<b>A safe event</b>');
@@ -392,6 +588,7 @@ async function run(name, engine) {
       `${name}: timer recovery, deadlines, event labels, laps, intervals, fullscreen, directory, CSV passed.`,
     );
     await wayfinding(page, context, name);
+    await refinements(page, context, name);
     for (const viewport of [
       { width: 320, height: 740 },
       { width: 390, height: 844 },

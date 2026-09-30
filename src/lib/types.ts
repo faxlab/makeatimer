@@ -1,3 +1,4 @@
+import type { Adjustment } from './adjust-value';
 export type Values = Record<string, string>;
 export type ToolFamilyId =
   'timers' | 'time-math' | 'work' | 'dates' | 'time-zones' | 'rates-media';
@@ -12,6 +13,7 @@ export type Field = {
   min?: string;
   max?: string;
   step?: string;
+  adjustment?: Adjustment;
 };
 export type Result = {
   value: string;

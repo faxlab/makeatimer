@@ -45,10 +45,17 @@ import Layout from '../layouts/Layout.astro';
       pause. Your device clock matters.
     </p>
     <p>
-      A shared duration reopens a preset. A shared deadline retains its absolute
-      instant across devices. Links never start a timer automatically. Session
-      storage restores active timing within the same tab, while favourites and
-      display settings stay in local storage.
+      Timer settings update the address bar. Running timer links retain their
+      absolute finishing time across devices and open as a live countdown.
+      Unstarted duration links begin on opening; paused links keep their
+      remaining time. Shared countdowns stay silent until sound is enabled and
+      do not request screen-awake mode. Copied links capture the current state;
+      later changes do not update previously copied links.
+    </p>
+    <p>
+      Calculator, stopwatch, and interval links restore editable settings.
+      Session storage restores timing and timer drafts within the same tab,
+      while favourites and display settings stay in local storage.
     </p>
     <h2>Estimates</h2>
     <p>

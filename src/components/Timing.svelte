@@ -5,6 +5,7 @@
   import { unlockAudio, playSound } from '../lib/audio';
   import type { Sound } from '../lib/audio';
   import Actions from './Actions.svelte';
+  import { dragValue } from '../lib/drag-value';
   let { intervals = false } = $props<{ intervals?: boolean }>();
   const defaults = untrack((): Record<string, string> => {
     if (intervals) return { work: '30', rest: '10', rounds: '8' };
@@ -255,6 +256,12 @@
           class="field"
         >
           <label for={key}>{label}</label><input
+            use:dragValue={{
+              kind: 'number',
+              min: key === 'rest' ? 0 : 1,
+              max: key === 'rounds' ? 1000 : 86400,
+              integer: true,
+            }}
             id={key}
             type="number"
             min={key === 'rest' ? '0' : '1'}

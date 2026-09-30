@@ -19,7 +19,7 @@ const canonical = new URL(path, config.origin).href;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#111416" />
+    <meta name="theme-color" content="#111111" />
     <title>{title} | Makeatimer</title>
     <meta name="description" content={description} />
     <meta
@@ -96,6 +96,7 @@ const canonical = new URL(path, config.origin).href;
       <ToolNavigation {path} {family} />
       <main
         id="main"
+        tabindex="-1"
         class="family-scope"
         style={family ? familyStyle(family) : undefined}
       >
@@ -127,6 +128,14 @@ const canonical = new URL(path, config.origin).href;
       </small>
     </footer>
     <script>
+      document
+        .querySelector<HTMLAnchorElement>('.skip-link')
+        ?.addEventListener('click', (event) => {
+          event.preventDefault();
+          const main = document.querySelector<HTMLElement>('#main');
+          main?.focus({ preventScroll: true });
+          main?.scrollIntoView({ block: 'start' });
+        });
       const select = document.querySelector<HTMLSelectElement>('#theme-select');
       if (select)
         select.value = document.documentElement.dataset.theme || 'system';
