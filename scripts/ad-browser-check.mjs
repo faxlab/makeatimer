@@ -19,6 +19,7 @@ async function buildFixture(adsEnabled = 'true') {
         PUBLIC_CMP_READY: 'true',
         PUBLIC_CONSENT_ENABLED: 'true',
         PUBLIC_ADS_ENABLED: adsEnabled,
+        PUBLIC_WEB_ANALYTICS_ENABLED: 'false',
         PUBLIC_ADS_CLIENT: 'ca-pub-0000000000000000',
         PUBLIC_ADS_SIDE_SLOT: '111',
         PUBLIC_ADS_RESULT_SLOT: '222',

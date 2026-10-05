@@ -5,11 +5,11 @@ import { config } from '../lib/config';
 
 <Layout
   title="Privacy"
-  description="How Makeatimer handles browser storage, share links, contact messages, and advertising."
+  description="How Makeatimer handles browser storage, share links, optional site statistics, contact messages, and advertising."
   path="/privacy/"
 >
   <article class="prose">
-    <p class="eyebrow">Updated September 30, 2026</p>
+    <p class="eyebrow">Updated October 5, 2026</p>
     <h1>Privacy</h1>
     <p>
       Makeatimer is operated by {config.operator}.{' '}
@@ -45,6 +45,54 @@ import { config } from '../lib/config';
       investigate your request. Avoid sending sensitive information that is
       unnecessary for resolving the issue.
     </p>
+    <h2 id="site-statistics">Optional site statistics</h2>
+    {config.analyticsEnabled ? (
+      <>
+        <p>
+          We ask visitors worldwide whether to allow cookie-free Cloudflare Web
+          Analytics. Statistics start only after you choose Allow statistics,
+          separately from advertising permission. No thanks keeps statistics
+          off. The calculators work with either choice.
+        </p>
+        <p>
+          Your allowed or refused choice is saved in this browser’s local
+          storage for 180 days, then we ask again. If the choice cannot be
+          saved, collection stays off. Use Site statistics in the footer to
+          change it. Withdrawing permission refreshes tabs that loaded
+          statistics to stop the running script. Existing timing recovery
+          preserves deadlines and paused state in the same tab; sound may need
+          enabling again.
+        </p>
+        <p>
+          Cloudflare processes connection and browser information to measure
+          page visits, referring pages, loading performance, and broad location.
+          Its beacon removes query strings and URL fragments from page and
+          referrer addresses; calculator inputs in share fragments are not
+          included. It does not use analytics cookies or identify exact unique
+          people. See{' '}
+          <a href="https://www.cloudflare.com/privacypolicy/">
+            Cloudflare’s privacy policy
+          </a>{' '}
+          and{' '}
+          <a href="https://developers.cloudflare.com/web-analytics/">
+            Web Analytics documentation
+          </a>
+          .
+        </p>
+        <p>
+          Reports cover consenting page visits and performance, not all traffic
+          or calculator completions. Refusals, blocked scripts, test activity,
+          and reporting delays affect the totals. Timer address changes do not
+          create extra page views. Removing site data clears your saved
+          preference.
+        </p>
+      </>
+    ) : (
+      <p>
+        Optional site statistics are disabled in this version. No Cloudflare
+        analytics script is loaded by Makeatimer.
+      </p>
+    )}
     <h2>Advertising</h2>
     {config.consent && (
       <>
@@ -90,8 +138,8 @@ import { config } from '../lib/config';
       </>
     ) : (
       <p>
-        Advertising is disabled in this version. Makeatimer requests no ads and
-        loads no analytics scripts.
+        Advertising is disabled in this version. Makeatimer requests no manual
+        ads.
         {!config.consent && ' No consent messaging script is loaded.'}
       </p>
     )}

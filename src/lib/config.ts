@@ -3,6 +3,10 @@ export const config = {
   operator: import.meta.env.PUBLIC_OPERATOR_NAME || 'MB „Faxcorp“',
   email: import.meta.env.PUBLIC_CONTACT_EMAIL || 'hello@faxcorp.dev',
   launchReady: import.meta.env.PUBLIC_LAUNCH_READY === 'true',
+  analyticsEnabled:
+    import.meta.env.PUBLIC_WEB_ANALYTICS_ENABLED === 'true' &&
+    import.meta.env.PUBLIC_LAUNCH_READY === 'true',
+  analyticsToken: import.meta.env.PUBLIC_WEB_ANALYTICS_TOKEN || '',
   consent:
     import.meta.env.PUBLIC_CONSENT_ENABLED === 'true' &&
     import.meta.env.PUBLIC_LAUNCH_READY === 'true',
@@ -18,6 +22,10 @@ export const config = {
     content: import.meta.env.PUBLIC_ADS_CONTENT_SLOT || '',
   },
 };
+if (config.analyticsEnabled && !/^[a-f0-9]{32}$/i.test(config.analyticsToken))
+  throw new Error(
+    'Enabled statistics require a valid Cloudflare Web Analytics token.',
+  );
 if (config.consent && !/^ca-pub-\d{16}$/.test(config.client))
   throw new Error(
     'Google consent messaging requires a valid public publisher ID.',

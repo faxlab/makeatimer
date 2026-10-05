@@ -17,7 +17,9 @@ export default defineConfig({
   outDir:
     process.env.MAKEATIMER_AD_TEST === 'true'
       ? './output/playwright/ads-dist'
-      : './dist',
+      : process.env.MAKEATIMER_ANALYTICS_TEST === 'true'
+        ? './output/playwright/analytics-dist'
+        : './dist',
   trailingSlash: 'always',
   integrations: [svelte()],
   devToolbar: { enabled: false },

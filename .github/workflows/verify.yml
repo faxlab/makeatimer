@@ -20,9 +20,11 @@ jobs:
         env:
           PUBLIC_LAUNCH_READY: 'false'
           PUBLIC_ADS_ENABLED: 'false'
+          PUBLIC_WEB_ANALYTICS_ENABLED: 'false'
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run browser-check
       - run: npm run ad-check
+      - run: npm run analytics-check
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

@@ -457,7 +457,7 @@ export const tools: Tool[] = [
     'Playback speed calculator',
     'rates-media',
     'rates',
-    'Calculate video, podcast, or audiobook listening time at any playback speed. See the new duration, time saved or added, and worked examples.',
+    'Calculate video or audiobook duration at any playback speed. See how much watching or listening time you save or add, with worked examples.',
     'Enter the original media length and the playback multiplier. The result is the time you will spend listening or watching, assuming continuous playback without pauses.',
     [
       field('duration', 'Original duration', '1:00:00'),

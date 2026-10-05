@@ -12,6 +12,7 @@ npm run verify
 npx playwright install chromium firefox webkit
 npm run browser-check
 npm run ad-check
+npm run analytics-check
 npm run build:production
 npm run deploy
 ```
@@ -28,7 +29,19 @@ Configure `makeatimer.com` as the custom domain. In Cloudflare, configure an HTT
 
 `scripts/production-env.mjs` supplies the confirmed public operator/contact defaults only to explicit release commands. Normal builds remain previews. Public Workers subdomains and version URLs are disabled in Wrangler configuration to avoid duplicate indexed copies.
 
-Submit `https://makeatimer.com/sitemap.xml` after verifying domain ownership in Search Console. Submission is separate from indexing or ranking. Optional analytics requires a deliberate integration and a matching privacy update; no analytics script is included by default.
+Submit `https://makeatimer.com/sitemap.xml` after verifying domain ownership in Search Console. Submission is separate from indexing or ranking.
+
+## Optional site statistics
+
+Reuse the site's existing Cloudflare Web Analytics property. After preparing and testing the release, select **Enable with JS Snippet installation** (manual installation) in that property's Manage site screen, then deploy. Automatic injection must be off everywhere before shipping the opt-in controller; otherwise visitors could be measured before choosing or get two beacons. Do not create another property. [Cloudflare installation instructions](https://developers.cloudflare.com/web-analytics/get-started/).
+
+Set `PUBLIC_WEB_ANALYTICS_TOKEN` to the existing snippet's 32-character hexadecimal token in ignored local or managed production configuration. Set `PUBLIC_WEB_ANALYTICS_ENABLED=true` explicitly in the production build/deploy environment. Enabled builds reject an invalid token. Release commands default this flag to false, overriding an `.env`-only activation value. Previews use `PUBLIC_LAUNCH_READY=false` and load no analytics regardless of a saved visitor allowance. Keep tokens and account evidence out of operational documentation in the public repository.
+
+Statistics permission is independent of Google advertising permission. Visitors worldwide see a nonblocking notice with equally prominent acceptance/refusal choices. An allowed or denied choice is stored in local storage for 180 days; missing, expired, invalid, or unavailable storage leaves collection off. The beacon is injected once after saved permission, with `spa:false`; timer address changes are not additional page views. Site statistics in the footer reopens the choice and explains withdrawal's refresh. Tabs with a loaded beacon reload at the same address on refusal, expiry, or cross-tab clearing, using the existing timer/stopwatch/interval recovery. A tab-local failure marker prevents a failed withdrawal write from restoring an older allowance.
+
+The privacy page documents Cloudflare processing and the preference lifetime. Reports measure consenting page visits, referrals, and performance. They do not measure calculator completion, all traffic, exact unique people, or earnings. Blocking, refusals, testing, geography, and reporting delays affect coverage. A transition from automatic regional collection to worldwide opt-in creates a break in comparability; record it privately.
+
+Run the analytics fixture in all three engines; real Google/Cloudflare traffic is intercepted there. Check refusal produces no beacon, acceptance injects one, `spa:false`, withdrawal removes it through reload, and timing deadlines/paused state survive. Inspect the actual production beacon payload to confirm page/referrer queries and fragments are absent, then confirm an explicitly consenting test visit from Europe appears in the same Cloudflare dashboard. Identify test traffic separately from customers. If disabling this feature, keep Cloudflare manual mode and redeploy with `PUBLIC_WEB_ANALYTICS_ENABLED=false`; rolling back to a release without the controller keeps statistics off while manual mode remains selected.
 
 ## Advertising activation
 

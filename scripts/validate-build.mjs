@@ -34,8 +34,17 @@ const paths = [
   'conventions',
 ];
 const titles = new Set();
+const preview = (await readFile('dist/robots.txt', 'utf8')).includes(
+  'Disallow: /',
+);
 for (const route of paths) {
   const html = await readFile(path.join('dist', route, 'index.html'), 'utf8');
+  if (preview)
+    assert(
+      !html.includes('id="statistics-notice"') &&
+        !html.includes('id="statistics-settings"'),
+      `No statistics integration in preview: ${route}`,
+    );
   const title = html.match(/<title>(.*?)<\/title>/)?.[1];
   assert(title && !titles.has(title), `Unique title: ${route}`);
   titles.add(title);
@@ -106,6 +115,20 @@ for (const route of paths) {
       `Prerendered FAQs: ${route}`,
     );
     assert(guide.includes(`href="${connection}"`), `Contextual link: ${route}`);
+    if (route === 'frames-duration')
+      assert(
+        guide.includes('frame step 1') &&
+          guide.includes('240 − 1 + 1 = 240') &&
+          guide.includes('10 seconds'),
+        'Inclusive Blender frame example',
+      );
+    if (route === 'render-time')
+      assert(
+        guide.includes('45 seconds') &&
+          guide.includes('one worker') &&
+          guide.includes('3 hours 18 minutes'),
+        'Measured Blender render example',
+      );
     assert(
       !html
         .match(/<astro-island[^>]*>/g)

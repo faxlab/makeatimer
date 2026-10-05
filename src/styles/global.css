@@ -237,6 +237,47 @@ main {
   gap: 32px;
   padding-top: 32px;
 }
+.statistics-notice:not([hidden]) {
+  width: min(1440px, calc(100% - 32px));
+  margin: 8px auto 0;
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+.statistics-copy {
+  flex: 1 1 340px;
+}
+.statistics-copy p {
+  margin: 4px 0 0;
+}
+.statistics-copy p:empty {
+  display: none;
+}
+.statistics-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.statistics-actions .secondary {
+  min-height: 44px;
+  padding: 8px;
+  font-size: 13px;
+}
+.statistics-actions .quiet {
+  font-size: 13px;
+  padding: 8px 0;
+}
+.statistics-actions a.quiet {
+  display: inline-flex;
+  align-items: center;
+}
 .tool-navigation {
   min-width: 0;
   align-self: start;

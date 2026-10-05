@@ -65,6 +65,17 @@ assert(
   !robots.includes('Disallow: /'),
   'Build production output before release.',
 );
+const home = await readFile('dist/index.html', 'utf8');
+assert.equal(
+  home.includes('id="statistics-settings"'),
+  process.env.PUBLIC_WEB_ANALYTICS_ENABLED === 'true',
+  'Statistics activation must match the built release.',
+);
+if (process.env.PUBLIC_WEB_ANALYTICS_ENABLED === 'true')
+  assert(
+    /^[a-f0-9]{32}$/i.test(process.env.PUBLIC_WEB_ANALYTICS_TOKEN || ''),
+    'Enabled statistics require the existing property token.',
+  );
 console.log(
   `Release checks passed for ${files.length} tracked files. Review file contents and history before pushing; this scan is not a substitute for review.`,
 );

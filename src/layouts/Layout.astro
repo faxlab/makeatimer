@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { config } from '../lib/config';
 import ToolNavigation from '../components/ToolNavigation.astro';
+import Statistics from '../components/Statistics.astro';
 import { familyStyle } from '../lib/families';
 const {
   title,
@@ -92,6 +93,7 @@ const canonical = new URL(path, config.origin).href;
         </nav>
       </div>
     </header>
+    <Statistics />
     <div class="site-shell">
       <ToolNavigation {path} {family} />
       <main
@@ -116,6 +118,11 @@ const canonical = new URL(path, config.origin).href;
         <a href="/conventions/">Calculation guide</a>
         <a href="/privacy/">Privacy</a>
         <a href="/terms/">Terms</a>
+        {config.analyticsEnabled && (
+          <button id="statistics-settings" class="quiet" disabled type="button">
+            Site statistics
+          </button>
+        )}
         <a href="https://github.com/faxlab/makeatimer">Source</a>
         {config.consent && (
           <>

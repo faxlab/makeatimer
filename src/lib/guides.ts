@@ -23,6 +23,10 @@ export const guides: Record<string, ToolGuide> = {
       'A batch gives each available worker one frame. The number of batches is rounded up because a remaining frame still needs a full per-frame render interval. The overhead allowance increases the complete estimate; it is not a separate fixed setup time.',
     examples: [
       {
+        title: 'A measured Blender render on one worker',
+        text: 'With frames 1–240 inclusive and frame step 1, Blender renders 240 frames. If representative test frames take 45 seconds each on your intended hardware, one worker needs 240 × 45 = 10,800 seconds. Adding 10% overhead gives 11,880 seconds: 3 hours 18 minutes. This is an estimate; complex frames or loading delays can change the actual time.',
+      },
+      {
         title: 'A short animation on four workers',
         text: '240 frames at 30 seconds per frame need 60 batches on four equal workers. That is 1,800 seconds, or 30 minutes. Adding 10% overhead gives 1,980 seconds: 33 minutes.',
       },
@@ -79,6 +83,10 @@ export const guides: Record<string, ToolGuide> = {
     explanation:
       'FPS tells you how many frames play in one second. Divide by FPS to find the elapsed time, then divide seconds by 60 for minutes or by 3,600 for hours. The main result uses hours:minutes:seconds, with fractional seconds where needed.',
     examples: [
+      {
+        title: 'Blender frames 1–240 at 24 FPS',
+        text: 'Blender’s start and end frames are inclusive. With start frame 1, end frame 240, and frame step 1, the sequence contains 240 − 1 + 1 = 240 frames. At 24 FPS, 240 ÷ 24 = 10 seconds. Enter the frame count, 240, rather than subtracting the endpoints to get 239.',
+      },
       {
         title: 'A 2,400-frame animation',
         text: 'At 24 FPS, 2,400 ÷ 24 = 100 seconds, or 1 minute 40 seconds. At 30 FPS, the same frame count lasts 80 seconds, or 1 minute 20 seconds.',

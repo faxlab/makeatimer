@@ -1,0 +1,168 @@
+---
+import { config } from '../lib/config';
+---
+
+{config.analyticsEnabled && (
+  <aside
+    id="statistics-notice"
+    class="statistics-notice"
+    aria-labelledby="statistics-title"
+    hidden
+  >
+    <div class="statistics-copy">
+      <strong id="statistics-title">
+        Allow cookie-free site statistics to help improve Makeatimer?
+      </strong>
+      <p id="statistics-refresh" hidden>
+        Changing an enabled preference refreshes this tab to stop statistics.
+        Your timer state is restored; sound may need enabling again.
+      </p>
+      <p id="statistics-status" role="status"></p>
+    </div>
+    <div class="statistics-actions">
+      <button id="statistics-allow" class="secondary" type="button">
+        Allow statistics
+      </button>
+      <button id="statistics-deny" class="secondary" type="button">
+        No thanks
+      </button>
+      <a class="quiet" href="/privacy/#site-statistics">
+        Privacy
+      </a>
+      <button id="statistics-close" class="quiet" type="button" hidden>
+        Close
+      </button>
+    </div>
+  </aside>
+)}
+<script>
+  import { config } from '../lib/config';
+  import {
+    analyticsController,
+    ANALYTICS_STORAGE_KEY,
+    ANALYTICS_LIFETIME,
+  } from '../lib/analytics';
+  const notice = document.querySelector<HTMLElement>('#statistics-notice');
+  const settings = document.querySelector<HTMLButtonElement>(
+    '#statistics-settings',
+  );
+  const allow = document.querySelector<HTMLButtonElement>('#statistics-allow');
+  const deny = document.querySelector<HTMLButtonElement>('#statistics-deny');
+  const close = document.querySelector<HTMLButtonElement>('#statistics-close');
+  const status = document.querySelector<HTMLElement>('#statistics-status');
+  const explanation = document.querySelector<HTMLElement>(
+    '#statistics-refresh',
+  );
+  let editing = false;
+  const failureKey = 'makeatimer:statistics:storage-failed';
+  let expiryTimer: ReturnType<typeof setTimeout> | undefined;
+  if (
+    config.analyticsEnabled &&
+    location.hostname === 'makeatimer.com' &&
+    notice
+  ) {
+    const controller = analyticsController(true, {
+      storage: {
+        getItem: (key) => {
+          let failed = false;
+          try {
+            failed = sessionStorage.getItem(failureKey) === '1';
+          } catch {}
+          if (failed) throw new Error('Statistics preference storage failed');
+          return localStorage.getItem(key);
+        },
+        setItem: (key, value) => {
+          localStorage.setItem(key, value);
+          if (localStorage.getItem(key) !== value)
+            throw new Error('Statistics choice was not saved');
+          try {
+            sessionStorage.removeItem(failureKey);
+          } catch {}
+        },
+      },
+      now: () => Date.now(),
+      load: () =>
+        new Promise<void>((resolve, reject) => {
+          if (document.querySelector('#makeatimer-statistics-beacon')) {
+            resolve();
+            return;
+          }
+          const script = document.createElement('script');
+          script.id = 'makeatimer-statistics-beacon';
+          script.async = true;
+          script.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+          script.dataset.cfBeacon = JSON.stringify({
+            token: config.analyticsToken,
+            spa: false,
+          });
+          script.onload = () => resolve();
+          script.onerror = () =>
+            reject(new Error('Statistics script unavailable'));
+          document.body.append(script);
+        }),
+      reload: () => {
+        // A failed withdrawal write must not restore an older allowance on reload.
+        if (controller.state().storageError) {
+          try {
+            sessionStorage.setItem(failureKey, '1');
+          } catch {}
+        }
+        location.reload();
+      },
+      changed: (state) => {
+        notice.hidden = !(editing || state.choice === 'unset');
+        if (explanation) explanation.hidden = state.script === 'idle';
+        if (close) close.hidden = !editing;
+        if (settings) {
+          settings.disabled = false;
+          settings.title = `Statistics: ${state.choice === 'unset' ? 'not chosen' : state.choice}`;
+        }
+        if (status)
+          status.textContent = state.storageError
+            ? 'Your choice could not be saved. Statistics stay off.'
+            : state.script === 'blocked'
+              ? 'Statistics are allowed, but the script could not load. The tools remain available.'
+              : editing
+                ? `Current choice: ${state.choice === 'unset' ? 'not chosen' : state.choice}.`
+                : '';
+        clearTimeout(expiryTimer);
+        if (state.savedAt !== null)
+          expiryTimer = setTimeout(
+            () => controller.refresh(),
+            Math.max(
+              1,
+              Math.min(
+                2147483647,
+                state.savedAt + ANALYTICS_LIFETIME - Date.now(),
+              ),
+            ),
+          );
+      },
+    });
+    const choose = (choice: 'allowed' | 'denied') => {
+      editing = false;
+      if (!controller.choose(choice)) editing = true;
+      if (editing) notice.hidden = false;
+    };
+    allow?.addEventListener('click', () => choose('allowed'));
+    deny?.addEventListener('click', () => choose('denied'));
+    settings?.addEventListener('click', () => {
+      editing = true;
+      controller.refresh();
+      notice.scrollIntoView({ block: 'nearest' });
+    });
+    close?.addEventListener('click', () => {
+      editing = false;
+      controller.refresh();
+    });
+    window.addEventListener('storage', (event) => {
+      if (event.key === ANALYTICS_STORAGE_KEY || event.key === null)
+        controller.refresh();
+    });
+    window.addEventListener('pageshow', () => controller.refresh());
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) controller.refresh();
+    });
+    controller.refresh();
+  }
+</script>

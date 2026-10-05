@@ -35,6 +35,7 @@ npm run verify
 npx playwright install chromium firefox webkit
 npm run browser-check
 npm run ad-check
+npm run analytics-check
 npm run performance-check
 ```
 
@@ -42,11 +43,15 @@ The browser check starts its own local static server and verifies the built outp
 
 The ad check uses isolated CMP and advertising fixtures. It covers consent/refusal, preference reopening, stalled delivery, late recovery, and blocked scripts without requesting live ads. Real publisher approval and real consent interactions remain separate deployment checks.
 
+The analytics check runs in Chromium, Firefox, and WebKit with all vendor traffic stubbed. It covers independent statistics choices, expiry, blocked storage/scripts, duplicate prevention, cross-tab withdrawal, timing recovery, and accessible mobile notices. Actual Cloudflare payloads and dashboard receipt require separate production checks.
+
 ## Calculation rules
 
 Durations accept `H:MM` or `H:MM:SS`. Clock calculations use fixed durations; calendar calculations use the Gregorian calendar. Time-zone conversions reject nonexistent times and require an explicit earlier/later selection for repeated times. Fixed PST is separate from seasonal Los Angeles time.
 
 Browser alarms cannot guarantee execution while a tab is closed, frozen, discarded, or the device is asleep. Timers recover from timestamps when execution resumes. Session storage isolates timing state to a tab; local storage holds theme, sound preference, and favourites. Device clock changes affect elapsed timing.
+
+Optional Cloudflare statistics use a separate worldwide opt-in choice, remembered for 180 days. Use Site statistics in the footer to change it. Withdrawal refreshes tabs that loaded the beacon, preserving existing timing recovery. Statistics measure consenting page visits and performance, not calculator completions or exact unique people. Development and preview builds default to no analytics.
 
 While timing is active or paused, internal navigation opens another tab to keep the timing tab available. The labelled "Open another tool in a new tab" link offers the same behaviour directly. A new tab starts with editable defaults; it does not duplicate or start the original timer.
 
