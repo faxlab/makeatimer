@@ -237,7 +237,10 @@ main {
   gap: 32px;
   padding-top: 32px;
 }
-.statistics-notice:not([hidden]) {
+.statistics-notice {
+  display: none;
+}
+.has-js:not(.statistics-chosen) .statistics-notice:not([hidden]) {
   width: min(1440px, calc(100% - 32px));
   margin: 4px auto 0;
   padding: 8px 12px;

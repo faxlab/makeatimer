@@ -7,7 +7,6 @@ import { config } from '../lib/config';
     id="statistics-notice"
     class="statistics-notice"
     aria-labelledby="statistics-title"
-    hidden
   >
     <div class="statistics-copy">
       <strong id="statistics-title">
@@ -20,16 +19,16 @@ import { config } from '../lib/config';
       <p id="statistics-status" role="status"></p>
     </div>
     <div class="statistics-actions">
-      <button id="statistics-allow" class="secondary" type="button">
+      <button id="statistics-allow" class="secondary" type="button" disabled>
         Allow statistics
       </button>
-      <button id="statistics-deny" class="secondary" type="button">
+      <button id="statistics-deny" class="secondary" type="button" disabled>
         No thanks
       </button>
       <a class="quiet" href="/privacy/#site-statistics">
         Privacy
       </a>
-      <button id="statistics-close" class="quiet" type="button" hidden>
+      <button id="statistics-close" class="quiet" type="button" disabled hidden>
         Close
       </button>
     </div>
@@ -40,6 +39,7 @@ import { config } from '../lib/config';
   import {
     analyticsController,
     ANALYTICS_STORAGE_KEY,
+    ANALYTICS_FAILURE_KEY,
     ANALYTICS_LIFETIME,
   } from '../lib/analytics';
   const notice = document.querySelector<HTMLElement>('#statistics-notice');
@@ -54,7 +54,7 @@ import { config } from '../lib/config';
     '#statistics-refresh',
   );
   let editing = false;
-  const failureKey = 'makeatimer:statistics:storage-failed';
+  const failureKey = ANALYTICS_FAILURE_KEY;
   let expiryTimer: ReturnType<typeof setTimeout> | undefined;
   if (
     config.analyticsEnabled &&
@@ -111,8 +111,12 @@ import { config } from '../lib/config';
       },
       changed: (state) => {
         notice.hidden = !(editing || state.choice === 'unset');
+        document.documentElement.classList.remove('statistics-chosen');
         if (explanation) explanation.hidden = state.script === 'idle';
         if (close) close.hidden = !editing;
+        if (allow) allow.disabled = false;
+        if (deny) deny.disabled = false;
+        if (close) close.disabled = false;
         if (settings) {
           settings.disabled = false;
           settings.title = `Statistics: ${state.choice === 'unset' ? 'not chosen' : state.choice}`;

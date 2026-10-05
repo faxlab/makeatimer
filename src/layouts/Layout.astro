@@ -4,6 +4,11 @@ import { config } from '../lib/config';
 import ToolNavigation from '../components/ToolNavigation.astro';
 import Statistics from '../components/Statistics.astro';
 import { familyStyle } from '../lib/families';
+import {
+  ANALYTICS_STORAGE_KEY,
+  ANALYTICS_FAILURE_KEY,
+  ANALYTICS_LIFETIME,
+} from '../lib/analytics';
 const {
   title,
   description,
@@ -61,6 +66,36 @@ const canonical = new URL(path, config.origin).href;
           document.documentElement.dataset.theme = t;
       } catch {}
     </script>
+    {config.analyticsEnabled && <script
+      is:inline
+      define:vars={{
+        statisticsKey: ANALYTICS_STORAGE_KEY,
+        statisticsFailureKey: ANALYTICS_FAILURE_KEY,
+        statisticsLifetime: ANALYTICS_LIFETIME,
+      }}
+    >
+      // Decide notice visibility before first paint. Permission still comes from the controller.
+      try {
+        const record = JSON.parse(
+          localStorage.getItem(statisticsKey) || 'null',
+        );
+        const now = Date.now();
+        let failed = false;
+        try {
+          failed = sessionStorage.getItem(statisticsFailureKey) === '1';
+        } catch {}
+        if (
+          !failed &&
+          record?.version === 1 &&
+          ['allowed', 'denied'].includes(record.choice) &&
+          Number.isFinite(record.savedAt) &&
+          record.savedAt >= 0 &&
+          record.savedAt <= now &&
+          now - record.savedAt < statisticsLifetime
+        )
+          document.documentElement.classList.add('statistics-chosen');
+      } catch {}
+    </script>}
   </head>
   <body>
     <a class="skip-link" href="#main">

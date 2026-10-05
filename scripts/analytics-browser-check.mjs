@@ -97,6 +97,8 @@ try {
         const url = new URL(req.url());
         if (url.origin === site) {
           const response = await fetch(`${origin}${url.pathname}${url.search}`);
+          if (options.delayScripts && url.pathname.endsWith('.js'))
+            await new Promise((resolve) => setTimeout(resolve, 150));
           await route.fulfill({
             status: response.status,
             contentType:
@@ -197,11 +199,22 @@ try {
       );
       for (const theme of ['light', 'dark']) {
         await page.getByLabel('Theme', { exact: true }).selectOption(theme);
+        await page.evaluate(() =>
+          Promise.allSettled(
+            document.getAnimations().map((animation) => animation.finished),
+          ),
+        );
         const audit = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
           .analyze();
         assert.deepEqual(
-          audit.violations.map((v) => v.id),
+          audit.violations.map((v) => ({
+            id: v.id,
+            targets: v.nodes.map((node) => ({
+              target: node.target,
+              summary: node.failureSummary,
+            })),
+          })),
           [],
           `${name} ${theme} notice accessibility`,
         );
@@ -448,6 +461,37 @@ try {
       );
       assert.equal(failedWrite.loads.get(failedPage), 1);
       assert.deepEqual(errors, []);
+      if (name === 'chromium') {
+        for (const saved of [false, true]) {
+          const lab = await context({
+            delayScripts: true,
+            ...(saved
+              ? { saved: { version: 1, choice: 'denied', savedAt: Date.now() } }
+              : {}),
+          });
+          await lab.ctx.addInitScript(() => {
+            window.__statisticsCLS = 0;
+            new PerformanceObserver((list) => {
+              for (const entry of list.getEntries())
+                if (!entry.hadRecentInput)
+                  window.__statisticsCLS += entry.value;
+            }).observe({ type: 'layout-shift', buffered: true });
+          });
+          const labPage = await lab.ctx.newPage();
+          await labPage.setViewportSize({ width: 390, height: 844 });
+          await labPage.goto(`${site}/`);
+          await ready(labPage);
+          await labPage.waitForTimeout(300);
+          assert(
+            (await labPage.evaluate(() => window.__statisticsCLS)) < 0.1,
+            `Statistics notice CLS with delayed scripts, saved refusal: ${saved}`,
+          );
+          assert.equal(
+            await labPage.locator('#statistics-notice').isVisible(),
+            !saved,
+          );
+        }
+      }
       console.log(
         `${name}: worldwide statistics choices, saved/expired state, blocked storage/script, single injection, cross-tab withdrawal, timer/draft/paused recovery, mobile and accessibility passed. Vendor traffic was stubbed.`,
       );

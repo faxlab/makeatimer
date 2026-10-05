@@ -1,4 +1,5 @@
 export const ANALYTICS_STORAGE_KEY = 'makeatimer:statistics:v1';
+export const ANALYTICS_FAILURE_KEY = 'makeatimer:statistics:storage-failed';
 export const ANALYTICS_LIFETIME = 180 * 24 * 60 * 60 * 1000;
 export type AnalyticsChoice = 'unset' | 'allowed' | 'denied';
 export type AnalyticsRecord = {
