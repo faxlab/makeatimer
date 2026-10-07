@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import type { Tool, Values, Result, Field } from '../lib/types';
-  import { decodeShare } from '../lib/share';
+  import { decodeShare, encodeShare } from '../lib/share';
   import InputField from './InputField.svelte';
   import Actions from './Actions.svelte';
   let { tool } = $props<{ tool: Tool }>();
@@ -150,6 +150,42 @@
           : ''}
         disabled={!loaded || !output.result}
       />
+      {#if tool.id === 'frames-duration' || tool.id === 'render-time'}
+        {@const next = loaded ? output.result?.nextCalculation : undefined}
+        {@const nextLabel =
+          tool.id === 'frames-duration'
+            ? 'Estimate render time'
+            : 'Find finish time'}
+        <div class="next-calculation">
+          {#if next}
+            <a
+              class="secondary"
+              href={`/${next.tool}/${encodeShare(next.values)}`}
+              aria-describedby="next-calculation-hint"
+            >
+              {nextLabel}
+              <span aria-hidden="true">→</span>
+            </a>
+          {:else}
+            <button
+              class="secondary"
+              disabled
+              aria-describedby="next-calculation-hint"
+            >
+              {nextLabel} <span aria-hidden="true">→</span>
+            </button>
+          {/if}
+          <p id="next-calculation-hint">
+            {loaded && output.result && !next
+              ? tool.id === 'frames-duration'
+                ? 'Render estimates accept 1 to 1,000,000,000 frames.'
+                : 'This estimate exceeds the start / finish calculator’s duration limit.'
+              : tool.id === 'frames-duration'
+                ? 'Use this frame count, then enter your render speed and workers.'
+                : 'Use this estimate, then choose your render start time.'}
+          </p>
+        </div>
+      {/if}
     </div>
   </div>
 </section>

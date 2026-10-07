@@ -54,6 +54,12 @@ export function calculate(id: string, v: Values): Result {
       return {
         value: formatDuration(s),
         detail: `${frames.div(workers).ceil()} frame batches · equal workers, ideal distribution, ${v.overhead}% overhead`,
+        nextCalculation: s.lte(1e12)
+          ? {
+              tool: 'start-finish',
+              values: { direction: 'finish', duration: formatDuration(s) },
+            }
+          : undefined,
       };
     }
     case 'frames-duration': {
@@ -65,6 +71,10 @@ export function calculate(id: string, v: Values): Result {
       return {
         value: formatDuration(s, 6),
         detail: `${decimal(s)} seconds at ${v.fps} fps. No SMPTE or drop-frame timecode.`,
+        nextCalculation:
+          frames.gte(1) && frames.lte(1e9)
+            ? { tool: 'render-time', values: { frames: frames.toFixed(0) } }
+            : undefined,
       };
     }
     default:

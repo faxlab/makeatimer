@@ -21,6 +21,10 @@ export type Result = {
   detail: string;
   rows?: [string, string][];
   csv?: string;
+  nextCalculation?: {
+    tool: 'render-time' | 'start-finish';
+    values: Values;
+  };
 };
 export type Tool = {
   id: string;

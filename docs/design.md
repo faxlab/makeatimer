@@ -48,6 +48,8 @@ Timing stays scoped to its original page and tab. While active or paused, intern
 
 Timer/countdown addresses mirror their settings and current state. A copied running address contains an absolute finishing instant and opens immediately as a silent countdown. Setup duration links begin on opening; paused links retain remaining time; expired links show completion. A local draft survives refresh without starting itself. Shared opening never unlocks audio or requests wake lock. Calculator, stopwatch, and interval links remain editable presets. Copied links are snapshots rather than a synchronized remote session.
 
+Calculation handoffs sit below the result actions. Frames to seconds offers **Estimate render time**, passing its frame count into Render time. Render time offers **Find finish time**, passing its displayed estimate into Start / finish. Both open editable versioned presets through an explicit link; neither starts timing. Reserve the action layout before the engine loads and disable the action for invalid or unsupported destination values. Generic related-tool links remain available in the guide.
+
 ## Reserved advertising
 
 Keep advertising outside the controls. A side placement appears only from 1536px, with at least 800px left for the tool workspace. Smaller layouts use reserved result/content placements. Hide placements during active, paused, restored, or fullscreen timing and while a calculator shows an error.

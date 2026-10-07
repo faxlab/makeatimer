@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calculate } from '../src/lib/rates';
+import { calculate as calculateWork } from '../src/lib/work';
+import { decodeShare, encodeShare } from '../src/lib/share';
 import { getTool } from '../src/lib/tools';
 import { guides } from '../src/lib/guides';
 import type { Values } from '../src/lib/types';
@@ -10,6 +12,96 @@ const inputs = (id: string, overrides: Values = {}) => ({
     getTool(id).fields.map((field) => [field.key, field.default]),
   ),
   ...overrides,
+});
+
+test('calculation handoffs round-trip through destination defaults and preserve displayed duration', () => {
+  const frames = calculate(
+    'frames-duration',
+    inputs('frames-duration', { frames: '240' }),
+  );
+  const renderLink = frames.nextCalculation!;
+  const renderInputs = decodeShare(
+    encodeShare(renderLink.values),
+    inputs(renderLink.tool),
+  );
+  assert.equal(renderInputs.warning, '');
+  assert.equal(renderInputs.values.frames, '240');
+  assert.equal(renderInputs.values.workers, '4');
+  const render = calculate(renderLink.tool, renderInputs.values);
+  assert.equal(render.value, '0:33:00');
+  const finishLink = render.nextCalculation!;
+  const finishInputs = decodeShare(
+    encodeShare(finishLink.values),
+    inputs(finishLink.tool),
+  );
+  assert.equal(finishInputs.warning, '');
+  assert.equal(finishInputs.values.direction, 'finish');
+  assert.equal(finishInputs.values.duration, '0:33:00');
+  const finish = calculateWork(finishLink.tool, {
+    ...finishInputs.values,
+    time: '23:45',
+  });
+  assert.equal(finish.value, '00:18:00');
+  assert.match(finish.detail, /^\+1 day/);
+
+  const fractional = calculate(
+    'render-time',
+    inputs('render-time', {
+      frames: '10',
+      seconds: '0.1234',
+      workers: '3',
+      overhead: '10',
+    }),
+  );
+  assert.equal(fractional.value, '0:00:00.543');
+  assert.equal(fractional.nextCalculation!.values.duration, fractional.value);
+  assert.equal(
+    calculateWork(
+      'start-finish',
+      inputs('start-finish', fractional.nextCalculation!.values),
+    ).value,
+    '09:00:00.543',
+  );
+});
+
+test('handoffs respect destination bounds without rejecting valid source calculations', () => {
+  for (const frames of ['0', '1000000001'])
+    assert.equal(
+      calculate('frames-duration', inputs('frames-duration', { frames }))
+        .nextCalculation,
+      undefined,
+    );
+  for (const frames of ['1', '1000000000'])
+    assert.equal(
+      calculate('frames-duration', inputs('frames-duration', { frames }))
+        .nextCalculation!.values.frames,
+      frames,
+    );
+  const largest = calculate(
+    'render-time',
+    inputs('render-time', {
+      frames: '1',
+      seconds: '1000000000000',
+      workers: '1',
+      overhead: '0',
+    }),
+  );
+  assert.doesNotThrow(() =>
+    calculateWork(
+      'start-finish',
+      inputs('start-finish', largest.nextCalculation!.values),
+    ),
+  );
+  const tooLarge = calculate(
+    'render-time',
+    inputs('render-time', {
+      frames: '2',
+      seconds: '1000000000000',
+      workers: '1',
+      overhead: '0',
+    }),
+  );
+  assert.equal(tooLarge.nextCalculation, undefined);
 });
 
 test('playback savings, slower playback, normal speed and zero duration', () => {

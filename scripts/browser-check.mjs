@@ -604,6 +604,129 @@ async function mediaGuides(page, context, name) {
   );
 }
 
+async function calculationHandoffs(page, context, name) {
+  await page.goto(`${origin}/frames-duration/#frames=240&fps=25&v=1`);
+  await ready(page);
+  const renderLink = page.getByRole('link', {
+    name: 'Estimate render time',
+    exact: true,
+  });
+  const frames = page.getByLabel('Frame count', { exact: true });
+  for (const unavailable of ['', '0', '1000000001']) {
+    await frames.fill(unavailable);
+    await page.waitForSelector('.next-calculation a', { state: 'detached' });
+  }
+  await frames.fill('241');
+  await renderLink.waitFor();
+  const firstLink = await renderLink.getAttribute('href');
+  assert.equal(
+    new URLSearchParams(new URL(firstLink, origin).hash.slice(1)).get('frames'),
+    '241',
+  );
+  await frames.fill('240');
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.next-calculation a')
+      ?.getAttribute('href')
+      .includes('frames=240&'),
+  );
+  await renderLink.focus();
+  await renderLink.press('Enter');
+  await page.waitForURL(`${origin}/render-time/**`);
+  await ready(page);
+  assert.equal(
+    await page.getByLabel('Frame count', { exact: true }).inputValue(),
+    '240',
+  );
+  assert.equal(
+    await page.getByLabel('Parallel workers', { exact: true }).inputValue(),
+    '4',
+  );
+  assert.equal(await page.locator('.result-value').innerText(), '0:33:00');
+  const finishLink = page.getByRole('link', {
+    name: 'Find finish time',
+    exact: true,
+  });
+  await page.getByLabel('Parallel workers', { exact: true }).fill('1');
+  await page.waitForFunction(
+    () => document.querySelector('.result-value')?.textContent === '2:12:00',
+  );
+  const snapshot = await finishLink.getAttribute('href');
+  await page.getByLabel('Parallel workers', { exact: true }).fill('4');
+  await page.waitForFunction(
+    () => document.querySelector('.result-value')?.textContent === '0:33:00',
+  );
+  const other = await context.newPage();
+  try {
+    await other.goto(`${origin}${snapshot}`);
+    await ready(other);
+    assert.equal(
+      await other.getByLabel('Task duration', { exact: true }).inputValue(),
+      '2:12:00',
+    );
+    assert.equal(await other.locator('.timer-display').count(), 0);
+  } finally {
+    await other.close();
+  }
+  await finishLink.click();
+  await page.waitForURL(`${origin}/start-finish/**`);
+  await ready(page);
+  assert.equal(
+    await page.getByLabel('Find', { exact: true }).inputValue(),
+    'finish',
+  );
+  assert.equal(
+    await page.getByLabel('Task duration', { exact: true }).inputValue(),
+    '0:33:00',
+  );
+  await page.getByLabel('Known clock time', { exact: true }).fill('23:45');
+  await page.waitForFunction(
+    () => document.querySelector('.result-value')?.textContent === '00:18:00',
+  );
+  assert.match(await page.locator('.result-panel').innerText(), /\+1 day/);
+  await page.getByRole('button', { name: 'Share link' }).click();
+  const shared = await page
+    .getByLabel('Share link', { exact: true })
+    .inputValue();
+  await page.goto(shared);
+  await ready(page);
+  await page.reload();
+  await ready(page);
+  assert.equal(
+    await page.getByLabel('Known clock time', { exact: true }).inputValue(),
+    '23:45',
+  );
+  assert.equal(await page.locator('.result-value').innerText(), '00:18:00');
+  assert.equal(await page.locator('.timer-display').count(), 0);
+  assert.equal(await page.locator('.next-calculation').count(), 0);
+  await page.goto(`${origin}/render-time/`);
+  await ready(page);
+  await page.getByLabel('Seconds per frame', { exact: true }).fill('');
+  await page.waitForSelector('.error');
+  assert.equal(await finishLink.count(), 0);
+  await page
+    .getByLabel('Seconds per frame', { exact: true })
+    .fill('1000000000000');
+  await page.waitForSelector('.result-value');
+  assert.equal(await finishLink.count(), 0);
+  await page.getByLabel('Seconds per frame', { exact: true }).fill('30');
+  await finishLink.waitFor();
+  await page.screenshot({
+    path: `output/playwright/${name}-calculation-handoff.png`,
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 320, height: 740 });
+  await noOverflow(page);
+  await page.screenshot({
+    path: `output/playwright/${name}-calculation-handoff-mobile.png`,
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1366, height: 900 });
+  console.log(
+    `${name}: calculation handoffs, editable destination defaults, midnight rollover, snapshot links, share/reload and destination bounds passed.`,
+  );
+}
+
 async function run(name, engine) {
   const browser = await engine.launch();
   const context = await browser.newContext({
@@ -811,6 +934,7 @@ async function run(name, engine) {
     await wayfinding(page, context, name);
     await refinements(page, context, name);
     await mediaGuides(page, context, name);
+    await calculationHandoffs(page, context, name);
     for (const viewport of [
       { width: 320, height: 740 },
       { width: 390, height: 844 },

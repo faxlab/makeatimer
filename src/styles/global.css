@@ -719,6 +719,16 @@ main {
 .actions button {
   padding-inline: 0;
 }
+.next-calculation {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.next-calculation p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
 .status {
   font-size: 14px;
   color: var(--muted);

@@ -59,6 +59,8 @@ Timer settings update the address bar as you edit. Copy it directly to share: ru
 
 Calculator, stopwatch, and interval links retain editable settings. Links use readable, versioned fragment parameters and are not confidential.
 
+Frames to seconds can carry the current frame count into Render time with **Estimate render time**. The render result can carry its displayed duration into Start / finish with **Find finish time**. Choose the remaining inputs on the destination page; these actions open editable calculations and do not start a timer. Actions are available only when the values fit the destination calculator's limits.
+
 Value fields support vertical mouse/pen dragging. Shift gives finer control, Alt gives larger steps, and Escape restores the value before the drag. Normal typing, native keyboard/picker controls, and touch scrolling remain available.
 
 ## Build and deploy
